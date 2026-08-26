@@ -1,0 +1,123 @@
+.profile-page {
+  max-width: 420px;
+  margin: 3rem auto 0;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.profile-page h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.75rem;
+}
+
+.profile-alert {
+  text-align: center;
+  padding: 0.6rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.profile-alert.error {
+  background-color: #fdecea;
+  color: #c0392b;
+}
+
+.profile-alert.success {
+  background-color: #eafaf1;
+  color: #1e8449;
+}
+
+.profile-section {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.profile-section:last-child {
+  border-bottom: none;
+}
+
+.profile-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+  margin-bottom: 0.4rem;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.profile-value {
+  font-size: 1rem;
+  color: #222;
+}
+
+.profile-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+.profile-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.profile-btn-link {
+  background: none;
+  color: #2f5fd1;
+  padding: 0;
+  font-weight: 500;
+}
+
+.profile-btn-link:hover {
+  text-decoration: underline;
+}
+
+.profile-btn-primary {
+  background-color: #2f6fed;
+  color: white;
+}
+
+.profile-btn-primary:hover {
+  background-color: #2558c4;
+}
+
+.profile-btn-secondary {
+  background-color: #f1f2f5;
+  color: #333;
+}
+
+.profile-btn-secondary:hover {
+  background-color: #e3e5eb;
+}
+
+.profile-btn-danger {
+  background-color: transparent;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.profile-btn-danger:hover {
+  background-color: #c0392b;
+  color: white;
+}
