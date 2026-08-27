@@ -11,6 +11,9 @@ import Logout from "./pages/Logout";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Navbar from "./components/Navbar/Navbar";
+import ManageProducts from "./pages/ManageProducts";
+import ProtectedRoute from "./components/ProtectedRoute";
+import OrderHistory from "./pages/OrderHistory";
 
 function App() {
   const client = new QueryClient();
@@ -28,6 +31,15 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route
+                  path="/manage-products"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <ManageProducts />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/orders" element={<OrderHistory />} />
               </Routes>
             </BrowserRouter>
           </CartProvider>

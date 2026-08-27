@@ -19,8 +19,7 @@ const Home: React.FC = () => {
   });
 
   useEffect(() => {
-    if (productsData)
-      dispatch({ type: "SET_PRODUCTS", payload: productsData.data });
+    if (productsData) dispatch({ type: "SET_PRODUCTS", payload: productsData });
   }, [productsData, dispatch]);
 
   const { data: categories } = useQuery({
@@ -45,7 +44,7 @@ const Home: React.FC = () => {
           }
         >
           <option value="">All Categories</option>
-          {categories?.data.map((category: Category) => (
+          {categories?.map((category: Category) => (
             <option value={category} key={category}>
               {category}
             </option>

@@ -9,7 +9,14 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
+/**
+ * User's profile page. Lets a logged-in user view and edit their
+ * display name, change their password, view their order history,
+ * and delete their account entirely.
+ */
 const Profile: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -24,12 +31,25 @@ const Profile: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  /**
+   * Saves the edited display name to Firebase Auth.
+   *
+   * NOTE: this currently only updates Auth's own profile record, not
+   * the matching Firestore "users" document -- meaning displayName can
+   * drift out of sync between the two. Worth fixing before submission.
+   */
+  /**
+   * Saves the edited display name to both Firebase Auth and the matching
+   * Firestore "users" document, so the two stay in sync -- Auth's
+   * updateProfile alone doesn't touch Firestore at all.
+   */
   const handleUpdateName = async () => {
     if (!user) return;
     setError("");
     setSuccess("");
     try {
       await updateProfile(user, { displayName });
+      await updateDoc(doc(db, "users", user.uid), { displayName });
       setSuccess("Name updated successfully.");
       setIsEditingName(false);
     } catch (error: unknown) {
@@ -41,6 +61,12 @@ const Profile: React.FC = () => {
     }
   };
 
+  /**
+   * Changes the user's password. Firebase requires re-authenticating
+   * with the current password first, as a security measure, before
+   * allowing a password change -- that's what reauthenticateWithCredential
+   * handles here.
+   */
   const handleChangePassword = async () => {
     if (!user || !user.email) return;
     setError("");
@@ -65,6 +91,11 @@ const Profile: React.FC = () => {
     }
   };
 
+  /**
+   * Permanently deletes the user's Firebase Auth account, after a
+   * confirmation prompt. Redirects to /register afterward since the
+   * user no longer has an account to be logged into.
+   */
   const handleDeleteAccount = async () => {
     if (!user) return;
     const confirmed = window.confirm(
@@ -183,6 +214,18 @@ const Profile: React.FC = () => {
             Change Password
           </button>
         )}
+      </div>
+
+      {/* Links out to the dedicated Order History page (/orders),
+          rather than embedding order data directly into Profile. */}
+      <div className="profile-section">
+        <p className="profile-section-label">Orders</p>
+        <button
+          className="profile-btn profile-btn-secondary"
+          onClick={() => navigate("/orders")}
+        >
+          View Order History
+        </button>
       </div>
 
       <button
