@@ -4,6 +4,13 @@ import { useAuth } from "../context/AuthContext";
 import { createOrder } from "../api/api";
 import "./Cart.css";
 
+/**
+ * Shopping cart page. Displays items currently in the cart with
+ * quantity controls and a remove button, collects a shipping address,
+ * and places an order via createOrder() on checkout -- saving the
+ * cart's contents to Firestore before clearing it, then showing a
+ * confirmation screen with the new order's id.
+ */
 const Cart = () => {
   const { items, dispatch } = useCart();
   const { user } = useAuth();

@@ -9,6 +9,11 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 
+/**
+ * Extra profile data pulled from Firestore's "users" collection, on top
+ * of what Firebase Auth's User object already provides. Currently just
+ * role, since that's the only Firestore-only field the app checks.
+ */
 interface UserProfile {
   role: string;
 }
@@ -30,6 +35,17 @@ const AuthContext = createContext<AuthContextType>({
   authLoading: true,
 });
 
+/**
+ * Provides the app's authentication state: who's logged in (via Firebase
+ * Auth), their Firestore profile data (role), and whether that
+ * information has finished loading yet.
+ *
+ * Listens to Firebase Auth's onAuthStateChanged, which fires whenever
+ * someone logs in, logs out, or when the app first loads and Firebase
+ * checks for an existing session. Each time it fires, we also look up
+ * the matching Firestore user document (same uid) to get their role,
+ * since Auth itself has no concept of roles.
+ */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -40,12 +56,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         setUser(user);
 
+        // Look up this user's Firestore profile document by their uid,
+        // the same id Firebase Auth assigned -- that's what keeps the
+        // two records linked (see Register.tsx, where the document is
+        // first created with this same id).
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
           setProfile(userDocSnap.data() as UserProfile);
         } else {
+          // No matching Firestore document -- likely an account created
+          // before the app started creating user documents on register.
+          // Treat them as having no role rather than crashing.
           setProfile(null);
         }
       } else {
@@ -58,6 +81,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // decisions from here on.
       setAuthLoading(false);
     });
+
+    // Cleanup: stop listening for auth changes if this provider ever
+    // unmounts, to avoid a memory leak / updates on an unmounted component.
     return () => unsubscribe();
   }, []);
 

@@ -5,6 +5,12 @@ import styles from "../styles/auth-styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+/**
+ * Login page. Authenticates via Firebase Auth's email/password sign-in.
+ * If an already-logged-in user somehow lands here (e.g. via browser
+ * back button, or the ProtectedRoute redirect described below), they're
+ * immediately redirected to their profile instead of seeing the form.
+ */
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

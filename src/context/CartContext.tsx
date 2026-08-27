@@ -43,10 +43,17 @@ interface CartState {
   items: CartItem[];
 }
 
+/**
+ * Reducer handling every cart action. Each case returns a brand-new
+ * state object rather than mutating the existing one, which is required
+ * for React to correctly detect the state changed and re-render.
+ */
 const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case "ADD_TO_CART": {
       const product = action.payload as Product;
+      // If this product's already in the cart, just bump its quantity
+      // instead of adding a duplicate entry.
       const existing = state.items.find((item) => item.id === product.id);
       if (existing) {
         return {
@@ -57,14 +64,22 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           ),
         };
       }
+      // New product -- add it to the cart with a starting quantity of 1.
       return { items: [...state.items, { ...product, quantity: 1 }] };
     }
+
+    // Removes an item from the cart entirely, regardless of its
+    // current quantity.
     case "REMOVE_FROM_CART":
       return {
         items: state.items.filter((item) => item.id !== action.payload),
       };
+
     case "UPDATE_QUANTITY": {
       const { id, quantity } = action.payload;
+      // Dropping quantity to zero (or below, e.g. clicking "-" at 1)
+      // removes the item entirely, same as REMOVE_FROM_CART, rather
+      // than leaving a 0-quantity item sitting in the cart.
       if (quantity <= 0) {
         return { items: state.items.filter((item) => item.id !== id) };
       }
@@ -74,10 +89,17 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         ),
       };
     }
+
+    // Empties the cart completely -- used after a successful checkout.
     case "CLEAR_CART":
       return { items: [] };
+
+    // Replaces the entire cart wholesale -- used when loading a
+    // different user's saved cart from sessionStorage (see the
+    // useEffect below that fires on login/logout).
     case "SET_CART":
       return { items: action.payload };
+
     default:
       throw new Error(`Unhandled action type: ${(action as CartAction).type}`);
   }

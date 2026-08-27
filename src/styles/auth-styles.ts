@@ -1,5 +1,11 @@
 import type { CSSProperties } from "react";
 
+/**
+ * Shared inline styles for the auth-related pages (Login, Register,
+ * and parts of Profile) that use React's `style` prop directly rather
+ * than CSS classes. Centralizing them here keeps the look consistent
+ * across all three without repeating the same style objects in each file.
+ */
 const styles: Record<string, CSSProperties> = {
   form: {
     display: "flex",
