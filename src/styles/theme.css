@@ -1,0 +1,35 @@
+:root {
+  /* Core palette */
+  --color-primary: #7a5c99;
+  --color-primary-dark: #5f4578;
+  --color-primary-light: #a888c2;
+  --color-accent-pink: #db8bae;
+  --color-accent-teal: #4a9b92;
+  --color-accent-teal-light: #d5ece9;
+
+  /* Backgrounds -- eggshell/grey instead of purple-tinted white */
+  --color-bg: #f0eee9;
+  --color-surface: #faf9f6;
+  --color-surface-alt: #e9e6df;
+
+  /* Text */
+  --color-text: #2c2438;
+  --color-text-muted: #6b6078;
+
+  /* Status */
+  --color-error: #c0392b;
+  --color-success: #3f8f5f;
+
+  /* Shape & shadow */
+  --radius: 10px;
+  --shadow-card: 0 2px 8px rgba(44, 36, 56, 0.1);
+  --shadow-card-hover: 0 6px 16px rgba(44, 36, 56, 0.16);
+
+  /* Type */
+  --font-body: system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: var(--color-bg);
+  margin: 0;
+}

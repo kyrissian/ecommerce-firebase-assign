@@ -1,11 +1,9 @@
 .home-page {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  padding: 2.5rem 3rem;
+  font-family: var(--font-body);
+  color: var(--color-text);
 }
 
 .home-controls {
@@ -13,60 +11,61 @@
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .category-select {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-accent-teal);
   font-size: 1rem;
-  background-color: #fff;
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.profile-btn {
-  padding: 0.5rem 1.25rem;
-  border-radius: 8px;
-  border: none;
-  background-color: #1f2a44;
+.category-select:hover,
+.category-select:focus {
+  border-color: var(--color-accent-teal);
+  box-shadow: 0 0 0 3px rgba(74, 155, 146, 0.18);
+  outline: none;
+}
+
+.clear-filter-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-accent-teal);
+  background-color: var(--color-accent-teal-light);
+  color: var(--color-accent-teal);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.clear-filter-btn:hover {
+  background-color: var(--color-accent-teal);
   color: white;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.profile-btn:hover {
-  background-color: #34406b;
 }
 
 .status-message {
   text-align: center;
   font-size: 1.1rem;
-  color: #555;
+  color: var(--color-text-muted);
 }
 
 .status-message.error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 
 .product-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  justify-content: center;
-}
-.clear-filter-btn {
-  padding: 0.5rem 1.25rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background-color: #f1f2f5;
-  color: #333;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.clear-filter-btn:hover {
-  background-color: #e3e5eb;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  row-gap: 2.5rem;
+  column-gap: 1.75rem;
 }

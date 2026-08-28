@@ -14,6 +14,8 @@ import Navbar from "./components/Navbar/Navbar";
 import ManageProducts from "./pages/ManageProducts";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OrderHistory from "./pages/OrderHistory";
+import ProductDetail from "./pages/ProductDetail";
+import Checkout from "./pages/Checkout";
 
 /**
  * Root component. Sets up global providers and all app routes.
@@ -41,11 +43,13 @@ function App() {
               <Navbar />
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
 
                 {/* Admin-only: ProtectedRoute redirects anyone whose
                     Firestore profile role isn't "admin" back to home. */}

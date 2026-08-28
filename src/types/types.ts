@@ -48,9 +48,9 @@ export interface Order {
   userId: string;
   items: CartItem[];
   totalPrice: number;
-  /** Plain text shipping address, not validated -- collected for
-   * realism, not used for actual shipping/payment processing. */
+  /** Name of the person the order is being shipped to. Pre-filled from
+   * the user's profile display name if set, but editable. */
+  recipientName: string;
   shippingAddress: string;
-  /** ISO date string, e.g. "2026-08-27T14:32:00.000Z" */
   createdAt: string;
 }

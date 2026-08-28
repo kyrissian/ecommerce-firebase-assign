@@ -2,6 +2,7 @@ import { db } from "../firebaseConfig";
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -87,9 +88,11 @@ export const deleteProduct = async (id: string): Promise<void> => {
  * total, and stamps the current time as createdAt. Firestore assigns
  * the order's own document id automatically.
  */
+
 export const createOrder = async (
   userId: string,
   items: CartItem[],
+  recipientName: string,
   shippingAddress: string,
 ): Promise<string> => {
   const totalPrice = items.reduce(
@@ -101,6 +104,7 @@ export const createOrder = async (
     userId,
     items,
     totalPrice,
+    recipientName,
     shippingAddress,
     createdAt: new Date().toISOString(),
   });
@@ -124,4 +128,23 @@ export const fetchUserOrders = async (userId: string): Promise<Order[]> => {
     id: docSnap.id,
     ...docSnap.data(),
   })) as Order[];
+};
+
+/**
+ * Fetches a single product from Firestore by its document id.
+ *
+ * Used by the product detail page so it works as a real deep link --
+ * someone can share or bookmark a /products/:id URL and land directly
+ * on that product, without needing to have first visited Home.tsx
+ * (which is what populates ProductContext).
+ */
+export const fetchProductById = async (id: string): Promise<Product | null> => {
+  const productRef = doc(db, "products", id);
+  const productSnap = await getDoc(productRef);
+
+  if (!productSnap.exists()) {
+    return null;
+  }
+
+  return { id: productSnap.id, ...productSnap.data() } as Product;
 };

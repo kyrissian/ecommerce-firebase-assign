@@ -257,7 +257,8 @@ const ManageProducts: React.FC = () => {
             ) : (
               // Normal (non-edit) display.
               <>
-                <span>{product.title}</span> — <span>${product.price}</span>
+                <span>{product.title}</span> —{" "}
+                <span>${product.price.toFixed(2)}</span>
                 <button onClick={() => setEditingProduct(product)}>Edit</button>
                 <button onClick={() => deleteMutation.mutate(product.id)}>
                   Delete

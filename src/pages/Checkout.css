@@ -1,0 +1,137 @@
+.checkout-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  font-family: var(--font-body);
+  color: var(--color-text);
+}
+
+.checkout-content {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.checkout-summary {
+  flex: 1 1 320px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 1.75rem;
+}
+
+.checkout-summary h2 {
+  font-size: 1.1rem;
+  margin: 0 0 1.25rem;
+}
+
+.checkout-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-surface-alt);
+  font-size: 0.95rem;
+}
+
+.checkout-summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+}
+
+.shipping-section {
+  flex: 1 1 320px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 1.75rem;
+}
+
+.shipping-heading {
+  font-size: 1.1rem;
+  margin: 0 0 1.25rem;
+}
+
+.shipping-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.shipping-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.shipping-field input {
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-primary-light);
+  font-size: 1rem;
+  font-family: var(--font-body);
+}
+
+.shipping-field input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(122, 92, 153, 0.15);
+  outline: none;
+}
+
+.place-order-btn {
+  padding: 0.7rem 1.75rem;
+  border: none;
+  border-radius: var(--radius);
+  background-color: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.15s ease;
+}
+
+.place-order-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.place-order-btn:disabled {
+  background-color: var(--color-primary-light);
+  cursor: not-allowed;
+}
+
+.order-confirmation {
+  text-align: center;
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 3rem 2rem;
+  max-width: 480px;
+  margin: 3rem auto 0;
+}
+
+.order-confirmation h1 {
+  color: var(--color-primary-dark);
+  margin-bottom: 0.75rem;
+}
+
+.order-confirmation button {
+  margin-top: 1.5rem;
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: var(--radius);
+  background-color: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.order-confirmation button:hover {
+  background-color: var(--color-primary-dark);
+}
