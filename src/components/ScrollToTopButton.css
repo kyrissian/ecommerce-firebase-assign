@@ -1,0 +1,24 @@
+.scroll-to-top-btn {
+  position: fixed;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--color-primary);
+  color: white;
+  font-size: 1.3rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-card-hover);
+  z-index: 100;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.scroll-to-top-btn:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-50%) scale(1.08);
+}

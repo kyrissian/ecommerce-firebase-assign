@@ -6,6 +6,9 @@
   background-color: var(--color-primary-dark);
   width: 100%;
   box-shadow: 0 2px 8px rgba(44, 36, 56, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 200;
 }
 
 .link {

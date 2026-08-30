@@ -4,6 +4,7 @@ import { useCart } from "../context/useCart";
 import { useAuth } from "../context/AuthContext";
 import { createOrder } from "../api/api";
 import "./Checkout.css";
+import { toast } from "react-toastify";
 
 /**
  * Dedicated checkout page, separate from the Cart page itself --
@@ -42,6 +43,7 @@ const Checkout: React.FC = () => {
       );
       dispatch({ type: "CLEAR_CART" });
       setConfirmedOrderId(orderId);
+      toast.success("Order placed successfully!");
     } finally {
       setIsPlacingOrder(false);
     }

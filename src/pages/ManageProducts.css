@@ -1,0 +1,245 @@
+.manage-products-page {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  font-family: var(--font-body);
+  color: var(--color-text);
+}
+
+.manage-products-page h1 {
+  margin-bottom: 1.5rem;
+}
+
+.manage-products-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+/* --- Left column: Add New Product form --- */
+
+.add-product-form {
+  flex: 0 0 300px;
+  background-color: var(--color-primary-tint);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: sticky;
+  top: 2rem;
+}
+
+.add-product-form h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-primary-light);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  box-sizing: border-box;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(122, 92, 153, 0.15);
+  outline: none;
+}
+
+.form-field textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.add-product-form > button[type="submit"] {
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: var(--radius);
+  background-color: var(--color-primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.add-product-form > button[type="submit"]:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.add-product-form > button[type="submit"]:disabled {
+  background-color: var(--color-primary-light);
+  cursor: not-allowed;
+}
+
+/* --- Right column: product list --- */
+
+.product-list-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-list-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.product-search {
+  flex: 1;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-accent-teal);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+}
+
+.product-search:focus {
+  border-color: var(--color-accent-teal);
+  box-shadow: 0 0 0 3px rgba(74, 155, 146, 0.18);
+  outline: none;
+}
+
+.product-category-filter {
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-accent-teal);
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  color-scheme: light;
+  cursor: pointer;
+}
+
+.product-category-filter option {
+  color: var(--color-text);
+  background-color: var(--color-surface);
+}
+
+.product-management-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.product-management-list > li {
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 1rem 1.25rem;
+}
+
+.product-management-list > li:not(:has(form)) {
+  display: grid;
+  grid-template-columns: 48px 1fr 5.5rem 4.5rem 4.5rem;
+  align-items: center;
+  gap: 1rem;
+}
+
+.product-management-image {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.product-management-list > li > span:nth-child(2) {
+  font-weight: 600;
+}
+
+.product-management-list > li > span:nth-child(3) {
+  text-align: right;
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.product-management-list button {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-accent-teal);
+  background-color: var(--color-accent-teal-light);
+  color: var(--color-accent-teal);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.product-management-list button:hover {
+  background-color: var(--color-accent-teal);
+  color: white;
+}
+
+/* Edit-mode form inside a list item */
+
+.product-management-list li form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 480px;
+}
+
+.edit-form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.edit-form-actions button[type="submit"] {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.edit-form-actions button[type="submit"]:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.edit-form-actions button[type="button"] {
+  background-color: var(--color-surface);
+  color: var(--color-text-muted);
+  border-color: var(--color-primary-light);
+}
+
+.edit-form-actions button[type="button"]:hover {
+  background-color: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+/* Stack into a single column on narrower screens */
+@media (max-width: 800px) {
+  .manage-products-layout {
+    flex-direction: column;
+  }
+
+  .add-product-form {
+    position: static;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

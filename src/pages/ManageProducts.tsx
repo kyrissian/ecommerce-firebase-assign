@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   fetchProducts,
@@ -7,22 +7,19 @@ import {
   deleteProduct,
 } from "../api/api";
 import type { Product } from "../types/types";
+import "./ManageProducts.css";
 
 /**
  * Admin-style page for managing products directly in Firestore.
  *
- * Supports full CRUD: Create (via the "Add New Product" form), Read
- * (the list itself), Update (Edit button swaps a list item into an
- * editable form pre-filled with its current values), and Delete.
+ * Two-column layout: "Add New Product" form as a sticky sidebar on the
+ * left, product list (with search + category filter) on the right.
+ * Supports full CRUD -- Create, Read, Update (Edit swaps a row into an
+ * editable form), and Delete (with a confirmation prompt).
  */
 const ManageProducts: React.FC = () => {
-  // Gives us access to React Query's cache, so mutations (create/update/
-  // delete) can tell React Query "the products list is now stale, go
-  // refetch it" -- keeping this page and Home.tsx in sync automatically.
   const queryClient = useQueryClient();
 
-  // Reuses the same queryKey ("products") that Home.tsx uses, so both
-  // pages share the same cached data under the hood.
   const {
     data: products,
     isLoading,
@@ -32,8 +29,6 @@ const ManageProducts: React.FC = () => {
     queryFn: fetchProducts,
   });
 
-  // Holds the values currently typed into the "add product" form.
-  // Starts empty; resets back to this after a successful submission.
   const [newProduct, setNewProduct] = useState<Omit<Product, "id">>({
     title: "",
     price: 0,
@@ -43,24 +38,40 @@ const ManageProducts: React.FC = () => {
     rating: { rate: 0, count: 0 },
   });
 
-  // Tracks which product (if any) is currently being edited. null means
-  // "not editing anything right now" -- the presence of a product here
-  // is what tells the UI to show an edit form instead of the normal
-  // title/price display for that item.
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Handles the actual Firestore write when the "add product" form is
-  // submitted. useMutation (unlike useQuery) is for actions that change
-  // data, not just read it.
+  // Search text and category filter for the product list -- both
+  // client-side, filtering whatever's already loaded rather than
+  // re-querying Firestore on every keystroke.
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+
+  // Derives the list of unique categories directly from the already-
+  // loaded products, same technique as fetchCategories() in api.ts,
+  // just done client-side here since we already have the full list.
+  const categories = useMemo(() => {
+    if (!products) return [];
+    return Array.from(new Set(products.map((p) => p.category)));
+  }, [products]);
+
+  // Recalculates only when products, searchTerm, or filterCategory
+  // actually change, rather than filtering on every render.
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    return products.filter((product) => {
+      const matchesSearch = product.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesCategory =
+        !filterCategory || product.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchTerm, filterCategory]);
+
   const createMutation = useMutation({
     mutationFn: createProduct,
     onSuccess: () => {
-      // Tell React Query the "products" data is now stale, so it
-      // refetches automatically -- this is what makes the new product
-      // show up in the list (and on Home.tsx) without a manual refresh.
       queryClient.invalidateQueries({ queryKey: ["products"] });
-
-      // Reset the form back to empty, ready for the next entry.
       setNewProduct({
         title: "",
         price: 0,
@@ -72,9 +83,6 @@ const ManageProducts: React.FC = () => {
     },
   });
 
-  // Handles removing a product from Firestore when its Delete button is
-  // clicked. Same invalidateQueries pattern as createMutation, so the
-  // list (and Home.tsx) update automatically once the deletion succeeds.
   const deleteMutation = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
@@ -82,19 +90,11 @@ const ManageProducts: React.FC = () => {
     },
   });
 
-  // Handles saving changes when an edit is submitted. Unlike
-  // createProduct (which only takes the new product data) and
-  // deleteProduct (which only takes an id), updateProduct needs both --
-  // so we pass an object containing both pieces, and mutationFn
-  // destructures them apart again before calling the real function.
   const updateMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Product> }) =>
       updateProduct(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-
-      // Editing is done -- clear editingProduct so the UI switches back
-      // to showing the normal (non-edit) list item.
       setEditingProduct(null);
     },
   });
@@ -103,171 +103,239 @@ const ManageProducts: React.FC = () => {
     <div className="manage-products-page">
       <h1>Manage Products</h1>
 
-      {isLoading && <p>Loading products...</p>}
-      {error && <p>Error loading products.</p>}
+      <div className="manage-products-layout">
+        <form
+          className="add-product-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            createMutation.mutate(newProduct);
+          }}
+        >
+          <h2>Add New Product</h2>
 
-      <form
-        className="add-product-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          createMutation.mutate(newProduct);
-        }}
-      >
-        <h2>Add New Product</h2>
+          <div className="form-field">
+            <label htmlFor="title">Title</label>
+            <input
+              id="title"
+              value={newProduct.title}
+              onChange={(e) =>
+                setNewProduct({ ...newProduct, title: e.target.value })
+              }
+            />
+          </div>
 
-        <label htmlFor="title">Title:</label>
-        <input
-          id="title"
-          value={newProduct.title}
-          onChange={(e) =>
-            setNewProduct({ ...newProduct, title: e.target.value })
-          }
-        />
+          <div className="form-field">
+            <label htmlFor="price">Price</label>
+            <input
+              id="price"
+              type="number"
+              step="0.01"
+              value={newProduct.price}
+              onChange={(e) =>
+                setNewProduct({
+                  ...newProduct,
+                  price: parseFloat(e.target.value),
+                })
+              }
+            />
+          </div>
 
-        <label htmlFor="price">Price:</label>
-        <input
-          id="price"
-          type="number"
-          step="0.01"
-          value={newProduct.price}
-          onChange={(e) =>
-            setNewProduct({
-              ...newProduct,
-              price: parseFloat(e.target.value),
-            })
-          }
-        />
+          <div className="form-field">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              value={newProduct.description}
+              onChange={(e) =>
+                setNewProduct({ ...newProduct, description: e.target.value })
+              }
+            />
+          </div>
 
-        <label htmlFor="description">Description:</label>
-        <textarea
-          id="description"
-          value={newProduct.description}
-          onChange={(e) =>
-            setNewProduct({ ...newProduct, description: e.target.value })
-          }
-        />
+          <div className="form-field">
+            <label htmlFor="category">Category</label>
+            <input
+              id="category"
+              value={newProduct.category}
+              onChange={(e) =>
+                setNewProduct({ ...newProduct, category: e.target.value })
+              }
+            />
+          </div>
 
-        <label htmlFor="category">Category:</label>
-        <input
-          id="category"
-          value={newProduct.category}
-          onChange={(e) =>
-            setNewProduct({ ...newProduct, category: e.target.value })
-          }
-        />
+          <div className="form-field">
+            <label htmlFor="image">Image URL</label>
+            <input
+              id="image"
+              value={newProduct.image}
+              onChange={(e) =>
+                setNewProduct({ ...newProduct, image: e.target.value })
+              }
+            />
+          </div>
 
-        <label htmlFor="image">Image URL:</label>
-        <input
-          id="image"
-          value={newProduct.image}
-          onChange={(e) =>
-            setNewProduct({ ...newProduct, image: e.target.value })
-          }
-        />
+          <button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending ? "Adding..." : "Add Product"}
+          </button>
+        </form>
 
-        <button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? "Adding..." : "Add Product"}
-        </button>
-      </form>
+        <div className="product-list-panel">
+          <div className="product-list-controls">
+            <input
+              className="product-search"
+              type="text"
+              placeholder="Search by title..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
 
-      <ul className="product-management-list">
-        {products?.map((product: Product) => (
-          <li key={product.id}>
-            {editingProduct?.id === product.id ? (
-              // This product is currently being edited -- show the full
-              // edit form, pre-filled with its existing values.
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  updateMutation.mutate({
-                    id: editingProduct.id,
-                    updates: editingProduct,
-                  });
-                }}
-              >
-                <label htmlFor="edit-title">Title:</label>
-                <input
-                  id="edit-title"
-                  value={editingProduct.title}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      title: e.target.value,
-                    })
-                  }
-                />
+            <select
+              className="product-category-filter"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option value={category} key={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                <label htmlFor="edit-price">Price:</label>
-                <input
-                  id="edit-price"
-                  type="number"
-                  step="0.01"
-                  value={editingProduct.price}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      price: parseFloat(e.target.value),
-                    })
-                  }
-                />
+          {isLoading && <p>Loading products...</p>}
+          {error && <p>Error loading products.</p>}
+          {filteredProducts.length === 0 && !isLoading && (
+            <p>No products match your search.</p>
+          )}
 
-                <label htmlFor="edit-description">Description:</label>
-                <textarea
-                  id="edit-description"
-                  value={editingProduct.description}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      description: e.target.value,
-                    })
-                  }
-                />
+          <ul className="product-management-list">
+            {filteredProducts.map((product: Product) => (
+              <li key={product.id}>
+                {editingProduct?.id === product.id ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      updateMutation.mutate({
+                        id: editingProduct.id,
+                        updates: editingProduct,
+                      });
+                    }}
+                  >
+                    <div className="form-field">
+                      <label htmlFor="edit-title">Title</label>
+                      <input
+                        id="edit-title"
+                        value={editingProduct.title}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            title: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
 
-                <label htmlFor="edit-category">Category:</label>
-                <input
-                  id="edit-category"
-                  value={editingProduct.category}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      category: e.target.value,
-                    })
-                  }
-                />
+                    <div className="form-field">
+                      <label htmlFor="edit-price">Price</label>
+                      <input
+                        id="edit-price"
+                        type="number"
+                        step="0.01"
+                        value={editingProduct.price}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            price: parseFloat(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
 
-                <label htmlFor="edit-image">Image URL:</label>
-                <input
-                  id="edit-image"
-                  value={editingProduct.image}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      image: e.target.value,
-                    })
-                  }
-                />
+                    <div className="form-field">
+                      <label htmlFor="edit-description">Description</label>
+                      <textarea
+                        id="edit-description"
+                        value={editingProduct.description}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            description: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
 
-                <button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? "Saving..." : "Save"}
-                </button>
-                <button type="button" onClick={() => setEditingProduct(null)}>
-                  Cancel
-                </button>
-              </form>
-            ) : (
-              // Normal (non-edit) display.
-              <>
-                <span>{product.title}</span> —{" "}
-                <span>${product.price.toFixed(2)}</span>
-                <button onClick={() => setEditingProduct(product)}>Edit</button>
-                <button onClick={() => deleteMutation.mutate(product.id)}>
-                  Delete
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+                    <div className="form-field">
+                      <label htmlFor="edit-category">Category</label>
+                      <input
+                        id="edit-category"
+                        value={editingProduct.category}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            category: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="edit-image">Image URL</label>
+                      <input
+                        id="edit-image"
+                        value={editingProduct.image}
+                        onChange={(e) =>
+                          setEditingProduct({
+                            ...editingProduct,
+                            image: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="edit-form-actions">
+                      <button type="submit" disabled={updateMutation.isPending}>
+                        {updateMutation.isPending ? "Saving..." : "Save"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingProduct(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <img
+                      src={product.image}
+                      alt={product.title}
+                      className="product-management-image"
+                    />
+                    <span>{product.title}</span>
+                    <span>${product.price.toFixed(2)}</span>
+                    <button onClick={() => setEditingProduct(product)}>
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        const confirmed = window.confirm(
+                          `Delete "${product.title}"? This cannot be undone.`,
+                        );
+                        if (confirmed) {
+                          deleteMutation.mutate(product.id);
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 };

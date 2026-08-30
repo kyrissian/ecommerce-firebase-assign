@@ -3,13 +3,14 @@
   --color-primary: #7a5c99;
   --color-primary-dark: #5f4578;
   --color-primary-light: #a888c2;
+  --color-primary-tint: #efe9f4;
   --color-accent-pink: #db8bae;
   --color-accent-teal: #4a9b92;
   --color-accent-teal-light: #d5ece9;
 
-  /* Backgrounds -- eggshell/grey instead of purple-tinted white */
-  --color-bg: #f0eee9;
-  --color-surface: #faf9f6;
+  /* Backgrounds */
+  --color-bg: #eae7e0;
+  --color-surface: #ffffff;
   --color-surface-alt: #e9e6df;
 
   /* Text */
@@ -17,7 +18,7 @@
   --color-text-muted: #6b6078;
 
   /* Status */
-  --color-error: #c0392b;
+  --color-error: #c2185b;
   --color-success: #3f8f5f;
 
   /* Shape & shadow */

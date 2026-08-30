@@ -3,6 +3,7 @@ import { Rating } from "@smastrom/react-rating";
 import { useCart } from "../context/useCart";
 import { Link } from "react-router-dom";
 import "./ProductCard.css";
+import { toast } from "react-toastify";
 
 /**
  * Displays a single product in the grid -- image, title, star rating,
@@ -36,6 +37,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           e.preventDefault();
           e.stopPropagation();
           dispatch({ type: "ADD_TO_CART", payload: product });
+          toast.success(`Added "${product.title}" to cart`);
         }}
       >
         Add to Cart

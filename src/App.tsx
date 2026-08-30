@@ -16,6 +16,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import OrderHistory from "./pages/OrderHistory";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
+import NotFound from "./pages/NotFound";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 /**
  * Root component. Sets up global providers and all app routes.
@@ -41,6 +44,7 @@ function App() {
           <CartProvider>
             <BrowserRouter>
               <Navbar />
+              <ToastContainer position="bottom-right" autoClose={2500} />
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
@@ -50,6 +54,9 @@ function App() {
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
+                {/* Must be the LAST route -- React Router matches routes top to
+    bottom, and "*" catches any URL that didn't match one above it. */}
+                <Route path="*" element={<NotFound />} />
 
                 {/* Admin-only: ProtectedRoute redirects anyone whose
                     Firestore profile role isn't "admin" back to home. */}

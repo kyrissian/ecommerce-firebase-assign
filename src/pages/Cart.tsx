@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/useCart";
 import "./Cart.css";
+import { toast } from "react-toastify";
 
 /**
  * Shopping cart review page. Displays items currently in the cart with
@@ -63,9 +64,10 @@ const Cart = () => {
 
               <button
                 className="remove-btn"
-                onClick={() =>
-                  dispatch({ type: "REMOVE_FROM_CART", payload: item.id })
-                }
+                onClick={() => {
+                  dispatch({ type: "REMOVE_FROM_CART", payload: item.id });
+                  toast.info(`Removed "${item.title}" from cart`);
+                }}
               >
                 Remove
               </button>

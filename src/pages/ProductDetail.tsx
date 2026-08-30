@@ -4,6 +4,7 @@ import { fetchProductById } from "../api/api";
 import { useCart } from "../context/useCart";
 import { Rating } from "@smastrom/react-rating";
 import "./ProductDetail.css";
+import { toast } from "react-toastify";
 
 /**
  * Dedicated page for a single product, reachable at /products/:id.
@@ -71,7 +72,10 @@ const ProductDetail: React.FC = () => {
 
           <button
             className="add-to-cart-btn"
-            onClick={() => dispatch({ type: "ADD_TO_CART", payload: product })}
+            onClick={() => {
+              dispatch({ type: "ADD_TO_CART", payload: product });
+              toast.success(`Added "${product.title}" to cart`);
+            }}
           >
             Add to Cart
           </button>
