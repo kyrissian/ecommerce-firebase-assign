@@ -1,10 +1,12 @@
 .profile-page {
-  max-width: 420px;
+  max-width: 480px;
   margin: 3rem auto 0;
   padding: 2rem;
-  background-color: #fff;
-  border-radius: 14px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-body);
+  color: var(--color-text);
 }
 
 .profile-page h1 {
@@ -16,24 +18,24 @@
 .profile-alert {
   text-align: center;
   padding: 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--radius);
   margin-bottom: 1rem;
   font-size: 0.9rem;
 }
 
 .profile-alert.error {
   background-color: #fdecea;
-  color: #c0392b;
+  color: var(--color-error);
 }
 
 .profile-alert.success {
-  background-color: #eafaf1;
-  color: #1e8449;
+  background-color: #eaf5ee;
+  color: var(--color-success);
 }
 
 .profile-section {
   padding: 1.25rem 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-surface-alt);
 }
 
 .profile-section:last-child {
@@ -45,7 +47,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #888;
+  color: var(--color-text-muted);
   margin-bottom: 0.4rem;
 }
 
@@ -58,21 +60,29 @@
 
 .profile-value {
   font-size: 1rem;
-  color: #222;
+  color: var(--color-text);
 }
 
 .profile-input {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--color-primary-light);
+  border-radius: var(--radius);
   font-size: 0.95rem;
+  font-family: var(--font-body);
   margin-bottom: 0.75rem;
+  box-sizing: border-box;
+}
+
+.profile-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(122, 92, 153, 0.15);
+  outline: none;
 }
 
 .profile-btn {
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
   font-weight: 500;
@@ -82,7 +92,7 @@
 
 .profile-btn-link {
   background: none;
-  color: #2f5fd1;
+  color: var(--color-accent-teal);
   padding: 0;
   font-weight: 500;
 }
@@ -92,32 +102,33 @@
 }
 
 .profile-btn-primary {
-  background-color: #2f6fed;
+  background-color: var(--color-primary);
   color: white;
 }
 
 .profile-btn-primary:hover {
-  background-color: #2558c4;
+  background-color: var(--color-primary-dark);
 }
 
 .profile-btn-secondary {
-  background-color: #f1f2f5;
-  color: #333;
+  background-color: var(--color-accent-teal-light);
+  color: var(--color-accent-teal);
 }
 
 .profile-btn-secondary:hover {
-  background-color: #e3e5eb;
+  background-color: var(--color-accent-teal);
+  color: white;
 }
 
 .profile-btn-danger {
-  background-color: transparent;
-  border: 1px solid #c0392b;
-  color: #c0392b;
+  background-color: var(--color-primary);
+  border: 3px solid var(--color-error);
+  color: white;
   width: 100%;
   margin-top: 0.5rem;
 }
 
 .profile-btn-danger:hover {
-  background-color: #c0392b;
-  color: white;
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-error);
 }

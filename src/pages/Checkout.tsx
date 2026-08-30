@@ -80,10 +80,16 @@ const Checkout: React.FC = () => {
           <h2>Order Summary</h2>
           {items.map((item) => (
             <div key={item.id} className="checkout-summary-row">
-              <span>
-                {item.title} × {item.quantity}
+              <img
+                src={item.image}
+                alt={item.title}
+                className="checkout-summary-image"
+              />
+              <span>{item.title}</span>
+              <span className="checkout-summary-qty">× {item.quantity}</span>
+              <span className="checkout-summary-price">
+                ${(item.price * item.quantity).toFixed(2)}
               </span>
-              <span>${(item.price * item.quantity).toFixed(2)}</span>
             </div>
           ))}
           <div className="checkout-summary-total">

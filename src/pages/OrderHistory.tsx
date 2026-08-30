@@ -8,7 +8,7 @@ import "./OrderHistory.css";
 /**
  * Displays a logged-in user's past orders. Each order shows a summary
  * row (id, date, total) that expands in place to show full details
- * (items, quantities, shipping address) when clicked.
+ * (item thumbnails, quantities, prices, shipping address) when clicked.
  */
 const OrderHistory: React.FC = () => {
   const { user } = useAuth();
@@ -24,9 +24,6 @@ const OrderHistory: React.FC = () => {
   } = useQuery({
     queryKey: ["orders", user?.uid],
     queryFn: () => fetchUserOrders(user!.uid),
-    // Only actually run this query once we know who the logged-in user
-    // is -- prevents an unnecessary/invalid fetch while auth is still
-    // resolving.
     enabled: !!user,
   });
 
@@ -63,9 +60,17 @@ const OrderHistory: React.FC = () => {
                 <p>Shipping to: {order.shippingAddress}</p>
                 <ul>
                   {order.items.map((item) => (
-                    <li key={item.id}>
-                      {item.title} — Qty: {item.quantity} — $
-                      {(item.price * item.quantity).toFixed(2)}
+                    <li key={item.id} className="order-item-row">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="order-item-image"
+                      />
+                      <span>{item.title}</span>
+                      <span className="order-item-qty">× {item.quantity}</span>
+                      <span className="order-item-price">
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </span>
                     </li>
                   ))}
                 </ul>

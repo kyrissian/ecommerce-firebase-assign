@@ -4,9 +4,10 @@ import "./Cart.css";
 
 /**
  * Shopping cart review page. Displays items currently in the cart with
- * quantity controls and a remove button. "Add More Items" and "Proceed
- * to Checkout" sit side by side at the bottom -- checking out itself is
- * a separate step, handled on the /checkout page.
+ * quantity controls and a remove button. Product images link to their
+ * detail pages. "Add More Items" and "Proceed to Checkout" sit side by
+ * side at the bottom -- checking out itself is a separate step, handled
+ * on the /checkout page.
  */
 const Cart = () => {
   const { items, dispatch } = useCart();
@@ -28,7 +29,9 @@ const Cart = () => {
         <>
           {items.map((item) => (
             <div key={item.id} className="cart-row">
-              <img src={item.image} alt={item.title} className="cart-image" />
+              <Link to={`/products/${item.id}`} className="cart-image-link">
+                <img src={item.image} alt={item.title} className="cart-image" />
+              </Link>
               <div className="cart-details">
                 <p className="cart-title">{item.title}</p>
                 <p className="cart-price">${item.price.toFixed(2)} each</p>

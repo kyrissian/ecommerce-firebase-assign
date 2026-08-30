@@ -62,14 +62,32 @@
   padding: 0;
 }
 
-.order-details li {
-  display: flex;
-  justify-content: space-between;
+.order-item-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 3.5rem 4.5rem;
+  align-items: center;
+  gap: 0.75rem;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--color-surface-alt);
   font-size: 0.9rem;
 }
 
-.order-details li:last-child {
+.order-item-row:last-child {
   border-bottom: none;
+}
+
+.order-item-image {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.order-item-qty {
+  text-align: right;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.order-item-price {
+  text-align: right;
 }
