@@ -3,33 +3,42 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/useCart";
 import { useAuth } from "../context/AuthContext";
 import { createOrder } from "../api/api";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 import { toast } from "react-toastify";
 import "./Checkout.css";
 
+/** Matches exactly xxx-xxx-xxxx -- three digits, dash, three digits,
+ * dash, four digits. Same pattern used on the Profile page. */
+const PHONE_PATTERN = /^\d{3}-\d{3}-\d{4}$/;
+
 /**
- * Dedicated checkout page, separate from the Cart page itself --
- * mirroring how real ecommerce sites split "review your cart" from
- * "enter shipping details and place the order" into two distinct steps.
+ * Dedicated checkout page, separate from the Cart page itself.
  *
  * Requires being logged in -- browsing and adding to cart work fine as
  * a guest, but checking out doesn't, since every order is tied to a
- * userId. A logged-out visitor who lands here gets redirected to
- * /login with a toast explaining why.
+ * userId. Pre-fills recipient name/address/phone from the user's saved
+ * profile (if set), and offers a checkbox to save whatever address/
+ * phone they enter back to their profile for next time.
  */
 const Checkout: React.FC = () => {
   const { items, dispatch } = useCart();
-  const { user, authLoading } = useAuth();
+  const { user, profile, setProfile, authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [recipientName, setRecipientName] = useState(user?.displayName ?? "");
-  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingAddress, setShippingAddress] = useState(
+    profile?.address ?? "",
+  );
+  const [phone, setPhone] = useState(profile?.phone ?? "");
+  // Defaults to checked if the user has no saved address yet (nudging
+  // them to save one), unchecked if they already have one saved.
+  const [saveContactToProfile, setSaveContactToProfile] = useState(
+    !profile?.address && !profile?.phone,
+  );
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
 
-  // Same race-condition protection as ProtectedRoute -- wait for
-  // Firebase to actually resolve auth state before deciding whether
-  // to redirect, so a real logged-in user doesn't get bounced during
-  // the brief moment auth is still loading.
   useEffect(() => {
     if (!authLoading && !user) {
       toast.info("Please log in to check out.");
@@ -45,6 +54,11 @@ const Checkout: React.FC = () => {
   const handlePlaceOrder = async () => {
     if (!user || !recipientName.trim() || !shippingAddress.trim()) return;
 
+    if (phone && !PHONE_PATTERN.test(phone)) {
+      toast.error("Phone number must be in the format xxx-xxx-xxxx.");
+      return;
+    }
+
     setIsPlacingOrder(true);
     try {
       const orderId = await createOrder(
@@ -53,6 +67,22 @@ const Checkout: React.FC = () => {
         recipientName,
         shippingAddress,
       );
+
+      // Optionally save this address/phone to the user's profile, so
+      // future checkouts can pre-fill them automatically. Also updates
+      // the in-memory `profile` via setProfile -- without this, the
+      // change would be correctly saved in Firestore but the Profile
+      // page would keep showing stale data until the next full login.
+      if (saveContactToProfile) {
+        await updateDoc(doc(db, "users", user.uid), {
+          address: shippingAddress,
+          phone,
+        });
+        setProfile(
+          profile ? { ...profile, address: shippingAddress, phone } : null,
+        );
+      }
+
       dispatch({ type: "CLEAR_CART" });
       setConfirmedOrderId(orderId);
       toast.success("Order placed successfully!");
@@ -73,9 +103,6 @@ const Checkout: React.FC = () => {
     );
   }
 
-  // Nothing to check out -- shouldn't normally be reachable (Cart's
-  // "Proceed to Checkout" button only shows when items exist), but
-  // protects against someone navigating here directly with an empty cart.
   if (items.length === 0) {
     return (
       <div className="checkout-page">
@@ -131,8 +158,31 @@ const Checkout: React.FC = () => {
               id="shipping-address"
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
-              placeholder="123 Main St, Anytown, USA"
+              placeholder="Street Address, City, ST, Zipcode"
             />
+          </div>
+
+          <div className="shipping-field">
+            <label htmlFor="shipping-phone">Phone Number</label>
+            <input
+              id="shipping-phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="xxx-xxx-xxxx"
+            />
+          </div>
+
+          <div className="save-address-checkbox">
+            <input
+              id="save-address"
+              type="checkbox"
+              checked={saveContactToProfile}
+              onChange={(e) => setSaveContactToProfile(e.target.checked)}
+            />
+            <label htmlFor="save-address">
+              Save this address & phone to my profile
+            </label>
           </div>
 
           <button

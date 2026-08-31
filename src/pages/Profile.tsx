@@ -6,19 +6,23 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import "./Profile.css";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+
+/** Matches exactly xxx-xxx-xxxx -- three digits, dash, three digits,
+ * dash, four digits. */
+const PHONE_PATTERN = /^\d{3}-\d{3}-\d{4}$/;
 
 /**
  * User's profile page. Lets a logged-in user view and edit their
- * display name, change their password, view their order history,
- * and delete their account entirely.
+ * display name, contact info (address/phone), change their password,
+ * view their order history, and delete their account entirely.
  */
 const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile, setProfile } = useAuth();
   const navigate = useNavigate();
 
   const [error, setError] = useState("");
@@ -27,17 +31,14 @@ const Profile: React.FC = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
 
+  const [isEditingContact, setIsEditingContact] = useState(false);
+  const [address, setAddress] = useState(profile?.address ?? "");
+  const [phone, setPhone] = useState(profile?.phone ?? "");
+
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
-  /**
-   * Saves the edited display name to Firebase Auth.
-   *
-   * NOTE: this currently only updates Auth's own profile record, not
-   * the matching Firestore "users" document -- meaning displayName can
-   * drift out of sync between the two. Worth fixing before submission.
-   */
   /**
    * Saves the edited display name to both Firebase Auth and the matching
    * Firestore "users" document, so the two stay in sync -- Auth's
@@ -52,6 +53,36 @@ const Profile: React.FC = () => {
       await updateDoc(doc(db, "users", user.uid), { displayName });
       setSuccess("Name updated successfully.");
       setIsEditingName(false);
+    } catch (error: unknown) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.",
+      );
+    }
+  };
+
+  /**
+   * Validates the phone format, saves address and phone to Firestore,
+   * then immediately updates the local `profile` state via setProfile --
+   * without this, the change would be correctly saved in Firestore but
+   * the UI would keep showing stale data until the next full login.
+   */
+  const handleUpdateContact = async () => {
+    if (!user) return;
+    setError("");
+    setSuccess("");
+
+    if (phone && !PHONE_PATTERN.test(phone)) {
+      setError("Phone number must be in the format xxx-xxx-xxxx.");
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, "users", user.uid), { address, phone });
+      setProfile(profile ? { ...profile, address, phone } : null);
+      setSuccess("Contact info updated successfully.");
+      setIsEditingContact(false);
     } catch (error: unknown) {
       setError(
         error instanceof Error
@@ -174,6 +205,61 @@ const Profile: React.FC = () => {
       </div>
 
       <div className="profile-section">
+        <p className="profile-section-label">Contact Info</p>
+        {isEditingContact ? (
+          <>
+            <input
+              className="profile-input"
+              type="text"
+              placeholder="Address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+            <input
+              className="profile-input"
+              type="tel"
+              placeholder="Phone Number (xxx-xxx-xxxx)"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <div className="profile-row">
+              <button
+                className="profile-btn profile-btn-primary"
+                onClick={handleUpdateContact}
+              >
+                Save
+              </button>
+              <button
+                className="profile-btn profile-btn-link"
+                onClick={() => setIsEditingContact(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="profile-row">
+            <div className="profile-contact-details">
+              <p className="profile-contact-line">
+                <span className="profile-contact-label">Address:</span>{" "}
+                {profile?.address || "Not set"}
+              </p>
+              <p className="profile-contact-line">
+                <span className="profile-contact-label">Phone:</span>{" "}
+                {profile?.phone || "Not set"}
+              </p>
+            </div>
+            <button
+              className="profile-btn profile-btn-secondary"
+              onClick={() => setIsEditingContact(true)}
+            >
+              Edit
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="profile-section">
         <p className="profile-section-label">Password</p>
         {isChangingPassword ? (
           <>
@@ -207,25 +293,29 @@ const Profile: React.FC = () => {
             </div>
           </>
         ) : (
-          <button
-            className="profile-btn profile-btn-secondary"
-            onClick={() => setIsChangingPassword(true)}
-          >
-            Change Password
-          </button>
+          <div className="profile-row">
+            <span className="profile-value">••••••••</span>
+            <button
+              className="profile-btn profile-btn-secondary"
+              onClick={() => setIsChangingPassword(true)}
+            >
+              Change Password
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Links out to the dedicated Order History page (/orders),
-          rather than embedding order data directly into Profile. */}
       <div className="profile-section">
         <p className="profile-section-label">Orders</p>
-        <button
-          className="profile-btn profile-btn-secondary"
-          onClick={() => navigate("/orders")}
-        >
-          View Order History
-        </button>
+        <div className="profile-row">
+          <span className="profile-value">View your past purchases</span>
+          <button
+            className="profile-btn profile-btn-secondary"
+            onClick={() => navigate("/orders")}
+          >
+            View Order History
+          </button>
+        </div>
       </div>
 
       <button

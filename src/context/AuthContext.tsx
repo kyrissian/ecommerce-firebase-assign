@@ -11,17 +11,25 @@ import { auth, db } from "../firebaseConfig";
 
 /**
  * Extra profile data pulled from Firestore's "users" collection, on top
- * of what Firebase Auth's User object already provides. Currently just
- * role, since that's the only Firestore-only field the app checks.
+ * of what Firebase Auth's User object already provides. role is always
+ * set (Register.tsx assigns "customer" to every new signup); address
+ * and phone are optional since they're only set once someone fills
+ * them in via Profile or during checkout.
  */
 interface UserProfile {
   role: string;
+  address?: string;
+  phone?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   setUser: (user: User | null) => void;
   profile: UserProfile | null;
+  /** Lets other components update the in-memory profile immediately
+   * after writing changes to Firestore, so the UI reflects the change
+   * right away instead of showing stale data until the next login. */
+  setProfile: (profile: UserProfile | null) => void;
   /** True until Firebase has resolved whether someone is logged in or not.
    * Prevents things like ProtectedRoute from redirecting prematurely,
    * before we actually know the real auth state. */
@@ -32,19 +40,20 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   setUser: (_user: User | null) => {},
   profile: null,
+  setProfile: (_profile: UserProfile | null) => {},
   authLoading: true,
 });
 
 /**
  * Provides the app's authentication state: who's logged in (via Firebase
- * Auth), their Firestore profile data (role), and whether that
- * information has finished loading yet.
+ * Auth), their Firestore profile data (role, address, phone), and
+ * whether that information has finished loading yet.
  *
  * Listens to Firebase Auth's onAuthStateChanged, which fires whenever
  * someone logs in, logs out, or when the app first loads and Firebase
  * checks for an existing session. Each time it fires, we also look up
- * the matching Firestore user document (same uid) to get their role,
- * since Auth itself has no concept of roles.
+ * the matching Firestore user document (same uid) to get their profile
+ * data, since Auth itself has no concept of role/address/phone.
  */
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -88,7 +97,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, profile, authLoading }}>
+    <AuthContext.Provider
+      value={{ user, setUser, profile, setProfile, authLoading }}
+    >
       {children}
     </AuthContext.Provider>
   );

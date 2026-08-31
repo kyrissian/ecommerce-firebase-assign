@@ -7,6 +7,7 @@ import {
   deleteProduct,
 } from "../api/api";
 import type { Product } from "../types/types";
+import { toast } from "react-toastify";
 import "./ManageProducts.css";
 
 /**
@@ -15,7 +16,8 @@ import "./ManageProducts.css";
  * Two-column layout: "Add New Product" form as a sticky sidebar on the
  * left, product list (with search + category filter) on the right.
  * Supports full CRUD -- Create, Read, Update (Edit swaps a row into an
- * editable form), and Delete (with a confirmation prompt).
+ * editable form), and Delete (with a confirmation prompt). All fields
+ * are required on both the create and edit forms.
  */
 const ManageProducts: React.FC = () => {
   const queryClient = useQueryClient();
@@ -40,22 +42,14 @@ const ManageProducts: React.FC = () => {
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Search text and category filter for the product list -- both
-  // client-side, filtering whatever's already loaded rather than
-  // re-querying Firestore on every keystroke.
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
 
-  // Derives the list of unique categories directly from the already-
-  // loaded products, same technique as fetchCategories() in api.ts,
-  // just done client-side here since we already have the full list.
   const categories = useMemo(() => {
     if (!products) return [];
     return Array.from(new Set(products.map((p) => p.category)));
   }, [products]);
 
-  // Recalculates only when products, searchTerm, or filterCategory
-  // actually change, rather than filtering on every render.
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     return products.filter((product) => {
@@ -80,6 +74,7 @@ const ManageProducts: React.FC = () => {
         image: "",
         rating: { rate: 0, count: 0 },
       });
+      toast.success("Product added.");
     },
   });
 
@@ -87,6 +82,7 @@ const ManageProducts: React.FC = () => {
     mutationFn: deleteProduct,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.info("Product deleted.");
     },
   });
 
@@ -96,8 +92,32 @@ const ManageProducts: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       setEditingProduct(null);
+      toast.success("Product updated.");
     },
   });
+
+  /**
+   * Validates that every field on a product (new or edited) has been
+   * filled in -- required attributes on text inputs catch empty
+   * strings, but price is a number input where 0 is technically a
+   * valid entered value, so it needs its own explicit check.
+   */
+  const validateProduct = (product: Omit<Product, "id">): boolean => {
+    if (
+      !product.title.trim() ||
+      !product.description.trim() ||
+      !product.category.trim() ||
+      !product.image.trim()
+    ) {
+      toast.error("Please fill in every field.");
+      return false;
+    }
+    if (!product.price || product.price <= 0) {
+      toast.error("Price must be greater than 0.");
+      return false;
+    }
+    return true;
+  };
 
   return (
     <div className="manage-products-page">
@@ -108,6 +128,7 @@ const ManageProducts: React.FC = () => {
           className="add-product-form"
           onSubmit={(e) => {
             e.preventDefault();
+            if (!validateProduct(newProduct)) return;
             createMutation.mutate(newProduct);
           }}
         >
@@ -117,6 +138,7 @@ const ManageProducts: React.FC = () => {
             <label htmlFor="title">Title</label>
             <input
               id="title"
+              required
               value={newProduct.title}
               onChange={(e) =>
                 setNewProduct({ ...newProduct, title: e.target.value })
@@ -130,6 +152,8 @@ const ManageProducts: React.FC = () => {
               id="price"
               type="number"
               step="0.01"
+              min="0.01"
+              required
               value={newProduct.price}
               onChange={(e) =>
                 setNewProduct({
@@ -144,6 +168,7 @@ const ManageProducts: React.FC = () => {
             <label htmlFor="description">Description</label>
             <textarea
               id="description"
+              required
               value={newProduct.description}
               onChange={(e) =>
                 setNewProduct({ ...newProduct, description: e.target.value })
@@ -155,6 +180,7 @@ const ManageProducts: React.FC = () => {
             <label htmlFor="category">Category</label>
             <input
               id="category"
+              required
               value={newProduct.category}
               onChange={(e) =>
                 setNewProduct({ ...newProduct, category: e.target.value })
@@ -166,6 +192,7 @@ const ManageProducts: React.FC = () => {
             <label htmlFor="image">Image URL</label>
             <input
               id="image"
+              required
               value={newProduct.image}
               onChange={(e) =>
                 setNewProduct({ ...newProduct, image: e.target.value })
@@ -215,6 +242,7 @@ const ManageProducts: React.FC = () => {
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
+                      if (!validateProduct(editingProduct)) return;
                       updateMutation.mutate({
                         id: editingProduct.id,
                         updates: editingProduct,
@@ -225,6 +253,7 @@ const ManageProducts: React.FC = () => {
                       <label htmlFor="edit-title">Title</label>
                       <input
                         id="edit-title"
+                        required
                         value={editingProduct.title}
                         onChange={(e) =>
                           setEditingProduct({
@@ -241,6 +270,8 @@ const ManageProducts: React.FC = () => {
                         id="edit-price"
                         type="number"
                         step="0.01"
+                        min="0.01"
+                        required
                         value={editingProduct.price}
                         onChange={(e) =>
                           setEditingProduct({
@@ -255,6 +286,7 @@ const ManageProducts: React.FC = () => {
                       <label htmlFor="edit-description">Description</label>
                       <textarea
                         id="edit-description"
+                        required
                         value={editingProduct.description}
                         onChange={(e) =>
                           setEditingProduct({
@@ -269,6 +301,7 @@ const ManageProducts: React.FC = () => {
                       <label htmlFor="edit-category">Category</label>
                       <input
                         id="edit-category"
+                        required
                         value={editingProduct.category}
                         onChange={(e) =>
                           setEditingProduct({
@@ -283,6 +316,7 @@ const ManageProducts: React.FC = () => {
                       <label htmlFor="edit-image">Image URL</label>
                       <input
                         id="edit-image"
+                        required
                         value={editingProduct.image}
                         onChange={(e) =>
                           setEditingProduct({

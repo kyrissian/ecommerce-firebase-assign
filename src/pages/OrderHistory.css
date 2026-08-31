@@ -23,9 +23,10 @@
 }
 
 .order-summary {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 100px 90px;
   align-items: center;
+  gap: 1rem;
   padding: 1.25rem 1.5rem;
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -40,9 +41,14 @@
   color: var(--color-primary-dark);
 }
 
+.order-summary span:nth-child(2) {
+  text-align: center;
+}
+
 .order-summary span:last-child {
   font-weight: 700;
   color: var(--color-text);
+  text-align: right;
 }
 
 .order-details {
