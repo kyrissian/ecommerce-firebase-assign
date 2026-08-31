@@ -2,6 +2,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/useCart";
 import { Link } from "react-router-dom";
 import "./Navbar.css";
+import Logo from "../Logo";
 
 /**
  * Top navigation bar, shown on every page. Displays different links
@@ -20,8 +21,8 @@ const Navbar = () => {
 
   return (
     <div className="nav-container">
-      <Link className="link" to="/">
-        Home
+      <Link className="link logo-link" to="/">
+        <Logo height={74} />
       </Link>
 
       <Link className="link cart-link" to="/cart">

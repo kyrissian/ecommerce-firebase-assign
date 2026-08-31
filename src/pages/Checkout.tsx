@@ -1,29 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/useCart";
 import { useAuth } from "../context/AuthContext";
 import { createOrder } from "../api/api";
-import "./Checkout.css";
 import { toast } from "react-toastify";
+import "./Checkout.css";
 
 /**
  * Dedicated checkout page, separate from the Cart page itself --
  * mirroring how real ecommerce sites split "review your cart" from
  * "enter shipping details and place the order" into two distinct steps.
  *
- * Collects a recipient name (pre-filled from the user's profile display
- * name, if set) and shipping address, then saves the order via
- * createOrder() and shows a confirmation screen with the new order's id.
+ * Requires being logged in -- browsing and adding to cart work fine as
+ * a guest, but checking out doesn't, since every order is tied to a
+ * userId. A logged-out visitor who lands here gets redirected to
+ * /login with a toast explaining why.
  */
 const Checkout: React.FC = () => {
   const { items, dispatch } = useCart();
-  const { user } = useAuth();
+  const { user, authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [recipientName, setRecipientName] = useState(user?.displayName ?? "");
   const [shippingAddress, setShippingAddress] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
+
+  // Same race-condition protection as ProtectedRoute -- wait for
+  // Firebase to actually resolve auth state before deciding whether
+  // to redirect, so a real logged-in user doesn't get bounced during
+  // the brief moment auth is still loading.
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast.info("Please log in to check out.");
+      navigate("/login");
+    }
+  }, [authLoading, user, navigate]);
 
   const totalPrice = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
