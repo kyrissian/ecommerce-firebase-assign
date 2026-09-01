@@ -114,6 +114,14 @@
   color: var(--color-text-muted);
 }
 
+.save-address-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
+  color-scheme: light;
+  cursor: pointer;
+}
+
 .place-order-btn {
   padding: 0.7rem 1.75rem;
   border: none;

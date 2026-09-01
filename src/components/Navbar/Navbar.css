@@ -67,3 +67,19 @@
 .logo-link:hover {
   background-color: transparent;
 }
+
+@media (max-width: 500px) {
+  .nav-container {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    overflow: visible;
+  }
+
+  .logo-link svg {
+    height: 44px;
+    width: auto;
+    margin-top: -6px;
+    margin-bottom: -6px;
+  }
+}

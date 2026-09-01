@@ -13,9 +13,11 @@ import { useNavigate } from "react-router-dom";
  * 2. Creates a matching profile document in Firestore's "users" collection,
  *    using the same uid Auth assigned, so the two records stay linked.
  *
- * Every new registration is given the "customer" role by default -- there's
- * no way to self-register as an admin through this form. Admin accounts are
- * promoted manually via the Firebase console.
+ * If step 2 fails after step 1 already succeeded (a genuine edge case --
+ * network drop, Firestore hiccup, etc.), the person ends up with a real
+ * login but no Firestore profile. We surface a specific error message
+ * for that case rather than the generic fallback, since it's a
+ * meaningfully different failure than a bad password or duplicate email.
  */
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -25,30 +27,31 @@ const Register = () => {
 
   const navigate = useNavigate();
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+
+    let userCredential;
     try {
-      // Step 1: Create the user's login credentials with Firebase Auth.
-      const userCredential = await createUserWithEmailAndPassword(
+      userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password,
       );
+    } catch (error: unknown) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.",
+      );
+      return;
+    }
 
-      // Step 2: Set the displayName on the Auth user object itself, so
-      // things like auth.currentUser.displayName work elsewhere in the app.
+    try {
       await updateProfile(userCredential.user, {
         displayName: displayName,
       });
 
-      // Step 3: Create the corresponding Firestore user document. We use
-      // setDoc (not addDoc) because we want to choose the document's ID
-      // ourselves -- specifically, the same uid Firebase Auth just
-      // generated -- rather than letting Firestore assign a random one.
-      // This keeps each user's Auth account and Firestore profile linked
-      // by a shared, predictable ID.
       await setDoc(doc(db, "users", userCredential.user.uid), {
         displayName: displayName,
         email: email,
@@ -57,11 +60,13 @@ const Register = () => {
 
       navigate("/profile");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("An unexpected error occurred.");
-      }
+      // Auth account was created successfully, but something after that
+      // failed (profile update or the Firestore document write).
+      console.error("Post-registration setup failed:", error);
+      setError(
+        "Your account was created, but we couldn't finish setting up your " +
+          "profile. Please try logging in, or contact support if this keeps happening.",
+      );
     }
   };
 

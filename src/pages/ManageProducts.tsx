@@ -10,15 +10,6 @@ import type { Product } from "../types/types";
 import { toast } from "react-toastify";
 import "./ManageProducts.css";
 
-/**
- * Admin-style page for managing products directly in Firestore.
- *
- * Two-column layout: "Add New Product" form as a sticky sidebar on the
- * left, product list (with search + category filter) on the right.
- * Supports full CRUD -- Create, Read, Update (Edit swaps a row into an
- * editable form), and Delete (with a confirmation prompt). All fields
- * are required on both the create and edit forms.
- */
 const ManageProducts: React.FC = () => {
   const queryClient = useQueryClient();
 
@@ -76,6 +67,9 @@ const ManageProducts: React.FC = () => {
       });
       toast.success("Product added.");
     },
+    onError: () => {
+      toast.error("Failed to add product. Please try again.");
+    },
   });
 
   const deleteMutation = useMutation({
@@ -83,6 +77,9 @@ const ManageProducts: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.info("Product deleted.");
+    },
+    onError: () => {
+      toast.error("Failed to delete product. Please try again.");
     },
   });
 
@@ -94,14 +91,11 @@ const ManageProducts: React.FC = () => {
       setEditingProduct(null);
       toast.success("Product updated.");
     },
+    onError: () => {
+      toast.error("Failed to update product. Please try again.");
+    },
   });
 
-  /**
-   * Validates that every field on a product (new or edited) has been
-   * filled in -- required attributes on text inputs catch empty
-   * strings, but price is a number input where 0 is technically a
-   * valid entered value, so it needs its own explicit check.
-   */
   const validateProduct = (product: Omit<Product, "id">): boolean => {
     if (
       !product.title.trim() ||

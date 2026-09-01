@@ -3,9 +3,10 @@ import type { ProductAction, ProductState } from "./ProductContext";
 
 /**
  * Shape of the context value exposed to any component calling
- * useProductContext() -- extends ProductState (products, selectedCategory)
- * and adds the dispatch function, so components can both read state and
- * trigger actions to update it.
+ * useProductContext() -- extends ProductState (just `products` now,
+ * since selectedCategory moved to the URL) and adds the dispatch
+ * function, so components can both read state and trigger actions to
+ * update it.
  */
 export interface ProductContextType extends ProductState {
   dispatch: React.Dispatch<ProductAction>;

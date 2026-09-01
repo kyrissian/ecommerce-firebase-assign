@@ -97,3 +97,32 @@
 .order-item-price {
   text-align: right;
 }
+
+@media (max-width: 500px) {
+  .order-history-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .order-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .order-summary span:nth-child(2),
+  .order-summary span:last-child {
+    text-align: left;
+  }
+
+  .order-item-row {
+    grid-template-columns: 36px 1fr;
+    row-gap: 0.35rem;
+  }
+
+  .order-item-row .order-item-qty,
+  .order-item-row .order-item-price {
+    grid-column: 2;
+    text-align: left;
+  }
+}

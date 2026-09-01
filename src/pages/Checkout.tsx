@@ -8,8 +8,6 @@ import { db } from "../firebaseConfig";
 import { toast } from "react-toastify";
 import "./Checkout.css";
 
-/** Matches exactly xxx-xxx-xxxx -- three digits, dash, three digits,
- * dash, four digits. Same pattern used on the Profile page. */
 const PHONE_PATTERN = /^\d{3}-\d{3}-\d{4}$/;
 
 /**
@@ -31,8 +29,6 @@ const Checkout: React.FC = () => {
     profile?.address ?? "",
   );
   const [phone, setPhone] = useState(profile?.phone ?? "");
-  // Defaults to checked if the user has no saved address yet (nudging
-  // them to save one), unchecked if they already have one saved.
   const [saveContactToProfile, setSaveContactToProfile] = useState(
     !profile?.address && !profile?.phone,
   );
@@ -68,11 +64,6 @@ const Checkout: React.FC = () => {
         shippingAddress,
       );
 
-      // Optionally save this address/phone to the user's profile, so
-      // future checkouts can pre-fill them automatically. Also updates
-      // the in-memory `profile` via setProfile -- without this, the
-      // change would be correctly saved in Firestore but the Profile
-      // page would keep showing stale data until the next full login.
       if (saveContactToProfile) {
         await updateDoc(doc(db, "users", user.uid), {
           address: shippingAddress,
@@ -86,6 +77,12 @@ const Checkout: React.FC = () => {
       dispatch({ type: "CLEAR_CART" });
       setConfirmedOrderId(orderId);
       toast.success("Order placed successfully!");
+    } catch (error: unknown) {
+      // Without this, a failed order (network issue, a rules rejection,
+      // etc.) would leave the user staring at a button that just went
+      // back to normal, with no explanation that anything went wrong.
+      console.error("Failed to place order:", error);
+      toast.error("Something went wrong placing your order. Please try again.");
     } finally {
       setIsPlacingOrder(false);
     }
@@ -158,7 +155,7 @@ const Checkout: React.FC = () => {
               id="shipping-address"
               value={shippingAddress}
               onChange={(e) => setShippingAddress(e.target.value)}
-              placeholder="Street Address, City, ST, Zipcode"
+              placeholder="123 Main St, Anytown, USA"
             />
           </div>
 
@@ -181,7 +178,7 @@ const Checkout: React.FC = () => {
               onChange={(e) => setSaveContactToProfile(e.target.checked)}
             />
             <label htmlFor="save-address">
-              Save this address & phone to my profile
+              Save this address and phone to my profile
             </label>
           </div>
 
