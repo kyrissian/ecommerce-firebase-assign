@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/useCart";
 import "./Cart.css";
-import { toast } from "react-toastify";
 
 /**
  * Shopping cart review page. Displays items currently in the cart with
@@ -38,39 +37,44 @@ const Cart = () => {
                 <p className="cart-price">${item.price.toFixed(2)} each</p>
               </div>
 
-              <div className="cart-quantity">
+              {/* Wrapped together so, on narrow screens, this whole
+                  group can drop to its own line as one unit, rather
+                  than relying on the browser to independently decide
+                  where each button wraps. */}
+              <div className="cart-row-actions">
+                <div className="cart-quantity">
+                  <button
+                    onClick={() =>
+                      dispatch({
+                        type: "UPDATE_QUANTITY",
+                        payload: { id: item.id, quantity: item.quantity - 1 },
+                      })
+                    }
+                  >
+                    −
+                  </button>
+                  <span>{item.quantity}</span>
+                  <button
+                    onClick={() =>
+                      dispatch({
+                        type: "UPDATE_QUANTITY",
+                        payload: { id: item.id, quantity: item.quantity + 1 },
+                      })
+                    }
+                  >
+                    +
+                  </button>
+                </div>
+
                 <button
+                  className="remove-btn"
                   onClick={() =>
-                    dispatch({
-                      type: "UPDATE_QUANTITY",
-                      payload: { id: item.id, quantity: item.quantity - 1 },
-                    })
+                    dispatch({ type: "REMOVE_FROM_CART", payload: item.id })
                   }
                 >
-                  −
-                </button>
-                <span>{item.quantity}</span>
-                <button
-                  onClick={() =>
-                    dispatch({
-                      type: "UPDATE_QUANTITY",
-                      payload: { id: item.id, quantity: item.quantity + 1 },
-                    })
-                  }
-                >
-                  +
+                  Remove
                 </button>
               </div>
-
-              <button
-                className="remove-btn"
-                onClick={() => {
-                  dispatch({ type: "REMOVE_FROM_CART", payload: item.id });
-                  toast.info(`Removed "${item.title}" from cart`);
-                }}
-              >
-                Remove
-              </button>
             </div>
           ))}
 

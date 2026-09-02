@@ -76,10 +76,21 @@
     overflow: visible;
   }
 
+  .logo-link {
+    flex-basis: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
   .logo-link svg {
     height: 44px;
     width: auto;
     margin-top: -6px;
     margin-bottom: -6px;
+  }
+
+  .link {
+    font-size: 0.9rem;
+    padding: 0.3rem 0.4rem;
   }
 }

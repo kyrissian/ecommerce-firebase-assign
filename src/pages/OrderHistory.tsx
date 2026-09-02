@@ -6,9 +6,10 @@ import type { Order } from "../types/types";
 import "./OrderHistory.css";
 
 /**
- * Displays a logged-in user's past orders. Each order shows a summary
- * row (id, date, total) that expands in place to show full details
- * (item thumbnails, quantities, prices, shipping address) when clicked.
+ * Displays a logged-in user's past orders, newest first. Each order
+ * shows a summary row (id, date, total) that expands in place to show
+ * full details (item thumbnails, quantities, prices, shipping address)
+ * when clicked.
  */
 const OrderHistory: React.FC = () => {
   const { user } = useAuth();
@@ -27,6 +28,19 @@ const OrderHistory: React.FC = () => {
     enabled: !!user,
   });
 
+  // Sort newest-first by createdAt. Done here, client-side, rather than
+  // adding an orderBy to the Firestore query itself -- combining our
+  // existing "where userId ==" filter with an orderBy would require
+  // creating a composite index in the Firebase console, which is extra
+  // manual setup. Sorting the already-fetched (typically small) list
+  // in JS avoids that entirely.
+  const sortedOrders = orders
+    ? [...orders].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+    : [];
+
   if (!user) {
     return <p>You must be logged in to view this page.</p>;
   }
@@ -37,10 +51,12 @@ const OrderHistory: React.FC = () => {
 
       {isLoading && <p>Loading orders...</p>}
       {error && <p>Error loading orders.</p>}
-      {orders?.length === 0 && <p>You haven't placed any orders yet.</p>}
+      {sortedOrders.length === 0 && !isLoading && (
+        <p>You haven't placed any orders yet.</p>
+      )}
 
       <ul className="order-list">
-        {orders?.map((order: Order) => (
+        {sortedOrders.map((order: Order) => (
           <li key={order.id} className="order-item">
             <div
               className="order-summary"
