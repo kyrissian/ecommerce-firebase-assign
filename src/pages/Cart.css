@@ -177,3 +177,18 @@
     max-width: none;
   }
 }
+
+.empty-cart {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  max-width: 400px;
+  margin: 2rem auto 0;
+}
+
+.empty-cart p {
+  color: var(--color-text-muted);
+  margin-bottom: 1.25rem;
+}

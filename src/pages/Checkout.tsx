@@ -10,15 +10,6 @@ import { isValidPhone } from "../utils/validators";
 import { calculateTotalPrice } from "../utils/calculations";
 import "./Checkout.css";
 
-/**
- * Dedicated checkout page, separate from the Cart page itself.
- *
- * Requires being logged in -- browsing and adding to cart work fine as
- * a guest, but checking out doesn't, since every order is tied to a
- * userId. Pre-fills recipient name/address/phone from the user's saved
- * profile (if set), and offers a checkbox to save whatever address/
- * phone they enter back to their profile for next time.
- */
 const Checkout: React.FC = () => {
   const { items, dispatch } = useCart();
   const { user, profile, setProfile, authLoading } = useAuth();
@@ -29,9 +20,19 @@ const Checkout: React.FC = () => {
     profile?.address ?? "",
   );
   const [phone, setPhone] = useState(profile?.phone ?? "");
-  const [saveContactToProfile, setSaveContactToProfile] = useState(
-    !profile?.address && !profile?.phone,
-  );
+
+  // Tracks whether the person has manually clicked the "save to
+  // profile" checkbox themselves. null means "not touched yet" -- in
+  // that state, whether the box appears checked is calculated fresh
+  // on every render (see saveContactToProfile below) rather than
+  // stored and synced via a separate effect, which React's linter
+  // flags as a pattern prone to extra unnecessary re-renders. Once the
+  // person clicks it directly, their explicit true/false choice takes
+  // over and we stop recalculating it for them.
+  const [manualCheckboxOverride, setManualCheckboxOverride] = useState<
+    boolean | null
+  >(null);
+
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null);
 
@@ -41,6 +42,19 @@ const Checkout: React.FC = () => {
       navigate("/login");
     }
   }, [authLoading, user, navigate]);
+
+  const hasNoSavedContact = !profile?.address && !profile?.phone;
+  const addressChanged = shippingAddress !== (profile?.address ?? "");
+  const phoneChanged = phone !== (profile?.phone ?? "");
+
+  // Derived directly during render, not via useEffect + setState:
+  // if the person hasn't manually touched the checkbox, suggest
+  // checking it whenever they have no saved contact info yet, or
+  // whenever what they've typed differs from what's already saved.
+  const saveContactToProfile =
+    manualCheckboxOverride !== null
+      ? manualCheckboxOverride
+      : hasNoSavedContact || addressChanged || phoneChanged;
 
   const totalPrice = calculateTotalPrice(items);
 
@@ -97,11 +111,16 @@ const Checkout: React.FC = () => {
   if (items.length === 0) {
     return (
       <div className="checkout-page">
-        <p>Your cart is empty.</p>
-        <button onClick={() => navigate("/")}>Back to Home</button>
+        <div className="order-confirmation">
+          <h1>Your Cart is Empty</h1>
+          <p>Add something to your cart before checking out.</p>
+          <button onClick={() => navigate("/")}>Back to Home</button>
+        </div>
       </div>
     );
   }
+
+  const hasSavedContact = !!(profile?.address || profile?.phone);
 
   return (
     <div className="checkout-page">
@@ -169,10 +188,12 @@ const Checkout: React.FC = () => {
               id="save-address"
               type="checkbox"
               checked={saveContactToProfile}
-              onChange={(e) => setSaveContactToProfile(e.target.checked)}
+              onChange={(e) => setManualCheckboxOverride(e.target.checked)}
             />
             <label htmlFor="save-address">
-              Save this address and phone to my profile
+              {hasSavedContact
+                ? "Update my saved profile with this address and phone"
+                : "Save this address and phone to my profile"}
             </label>
           </div>
 

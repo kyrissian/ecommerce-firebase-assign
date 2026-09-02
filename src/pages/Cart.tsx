@@ -15,7 +15,12 @@ const Cart = () => {
       <h1>Your Cart</h1>
 
       {items.length === 0 ? (
-        <p>Your cart is empty.</p>
+        <div className="empty-cart">
+          <p>Your cart is empty.</p>
+          <Link to="/" className="continue-shopping-btn">
+            Browse Products
+          </Link>
+        </div>
       ) : (
         <>
           {items.map((item) => (
