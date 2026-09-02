@@ -11,6 +11,12 @@
   z-index: 200;
 }
 
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .link {
   color: #ffffff;
   text-decoration: none;
@@ -24,13 +30,6 @@
 
 .link:hover {
   background-color: rgba(255, 255, 255, 0.12);
-}
-
-/* First link (Home) acts as the brand mark -- slightly larger, sits
-   on the far left. Every other link is grouped together on the right. */
-.nav-container .link:first-child {
-  font-size: 1.3rem;
-  margin-right: auto;
 }
 
 .cart-link {
@@ -56,16 +55,6 @@
   padding: 0 4px;
   line-height: 1;
   border: 2px solid var(--color-primary-dark);
-}
-
-.logo-link {
-  padding: 0;
-  display: flex;
-  align-items: center;
-}
-
-.logo-link:hover {
-  background-color: transparent;
 }
 
 @media (max-width: 500px) {

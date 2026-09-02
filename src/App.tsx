@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
@@ -36,7 +37,13 @@ import "react-toastify/dist/ReactToastify.css";
  *   outermost app-specific provider for consistency.
  */
 function App() {
-  const client = new QueryClient();
+  // useState(() => new QueryClient()) rather than a plain
+  // `const client = new QueryClient()` -- the function form guarantees
+  // React only creates the client once, on the very first render,
+  // rather than technically creating a brand new instance on every
+  // re-render of App (rare in practice here, but the correct pattern).
+  const [client] = useState(() => new QueryClient());
+
   return (
     <QueryClientProvider client={client}>
       <ProductProvider>

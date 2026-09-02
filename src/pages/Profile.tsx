@@ -20,6 +20,11 @@ const PHONE_PATTERN = /^\d{3}-\d{3}-\d{4}$/;
  * User's profile page. Lets a logged-in user view and edit their
  * display name, contact info (address/phone), change their password,
  * view their order history, and delete their account entirely.
+ *
+ * Note: deleting an account only removes the Firebase Auth login --
+ * the matching Firestore "users" document is intentionally kept
+ * (Security Rules block deletion of it), a common practice for
+ * legal/audit record-keeping even after account closure.
  */
 const Profile: React.FC = () => {
   const { user, profile, setProfile } = useAuth();
@@ -139,14 +144,31 @@ const Profile: React.FC = () => {
       await deleteUser(user);
       navigate("/register");
     } catch (error: unknown) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.",
-      );
+      // Firebase requires a recent login before allowing sensitive
+      // actions like account deletion. If the user's session is older,
+      // it throws this specific error code rather than a generic one --
+      // worth a clearer message than Firebase's raw technical text.
+      if (
+        error instanceof Error &&
+        error.message.includes("auth/requires-recent-login")
+      ) {
+        setError(
+          "For security, please log out and log back in before deleting your account.",
+        );
+      } else {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred.",
+        );
+      }
     }
   };
 
+  // Guards the whole page: if nobody's logged in, nothing below this
+  // renders at all -- unrelated to the recent-login check above, which
+  // only applies to the delete-account action for an already-logged-in
+  // user whose session happens to be old.
   if (!user) {
     return <p>You must be logged in to view this page.</p>;
   }

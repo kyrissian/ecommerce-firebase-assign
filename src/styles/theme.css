@@ -34,3 +34,36 @@ body {
   background-color: var(--color-bg);
   margin: 0;
 }
+
+/**
+ * Dark mode palette. Overrides the same variable names defined in
+ * :root above -- since every component references these variables
+ * rather than hardcoded colors, this single block is what makes dark
+ * mode apply consistently across the whole app.
+ *
+ * Applied via a data-theme="dark" attribute on <html>, toggled by
+ * useTheme.ts / ThemeToggle.tsx.
+ */
+[data-theme="dark"] {
+  --color-primary: #a888c2;
+  --color-primary-dark: #7a5c99;
+  --color-primary-light: #5f4578;
+  --color-primary-tint: #2e2740;
+
+  --color-accent-pink: #e6a8c4;
+  --color-accent-teal: #6fc2b8;
+  --color-accent-teal-light: #1f3835;
+
+  --color-bg: #1c1824;
+  --color-surface: #262030;
+  --color-surface-alt: #332b40;
+
+  --color-text: #ede8f2;
+  --color-text-muted: #a89bb8;
+
+  --color-error: #e05a8a;
+  --color-success: #5cba82;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 6px 16px rgba(0, 0, 0, 0.45);
+}

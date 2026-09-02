@@ -38,12 +38,11 @@ const Cart = () => {
               </div>
 
               {/* Wrapped together so, on narrow screens, this whole
-                  group can drop to its own line as one unit, rather
-                  than relying on the browser to independently decide
-                  where each button wraps. */}
+                  group can drop to its own line as one unit. */}
               <div className="cart-row-actions">
                 <div className="cart-quantity">
                   <button
+                    aria-label="Decrease quantity"
                     onClick={() =>
                       dispatch({
                         type: "UPDATE_QUANTITY",
@@ -55,6 +54,7 @@ const Cart = () => {
                   </button>
                   <span>{item.quantity}</span>
                   <button
+                    aria-label="Increase quantity"
                     onClick={() =>
                       dispatch({
                         type: "UPDATE_QUANTITY",

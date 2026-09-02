@@ -22,6 +22,13 @@ const Logo: React.FC<{ height?: number }> = ({ height = 56 }) => {
         strokeLinecap="round"
       />
       <rect x="15" y="62" width="90" height="72" rx="8" fill="#7a5c99" />
+      <path
+        d="M15 62 L15 126 Q15 134 23 134 L97 134 Q105 134 105 126 L105 62"
+        fill="none"
+        stroke="#c4aede"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
       <line
         x1="38"
         y1="62"
