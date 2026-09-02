@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/useCart";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { createOrder } from "../api/api";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { toast } from "react-toastify";
+import { isValidPhone } from "../utils/validators";
+import { calculateTotalPrice } from "../utils/calculations";
 import "./Checkout.css";
-
-const PHONE_PATTERN = /^\d{3}-\d{3}-\d{4}$/;
 
 /**
  * Dedicated checkout page, separate from the Cart page itself.
@@ -42,15 +42,12 @@ const Checkout: React.FC = () => {
     }
   }, [authLoading, user, navigate]);
 
-  const totalPrice = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
+  const totalPrice = calculateTotalPrice(items);
 
   const handlePlaceOrder = async () => {
     if (!user || !recipientName.trim() || !shippingAddress.trim()) return;
 
-    if (phone && !PHONE_PATTERN.test(phone)) {
+    if (phone && !isValidPhone(phone)) {
       toast.error("Phone number must be in the format xxx-xxx-xxxx.");
       return;
     }
@@ -78,9 +75,6 @@ const Checkout: React.FC = () => {
       setConfirmedOrderId(orderId);
       toast.success("Order placed successfully!");
     } catch (error: unknown) {
-      // Without this, a failed order (network issue, a rules rejection,
-      // etc.) would leave the user staring at a button that just went
-      // back to normal, with no explanation that anything went wrong.
       console.error("Failed to place order:", error);
       toast.error("Something went wrong placing your order. Please try again.");
     } finally {

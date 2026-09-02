@@ -1,23 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/useCart";
+import { calculateTotalPrice } from "../utils/calculations";
 import "./Cart.css";
 
-/**
- * Shopping cart review page. Displays items currently in the cart with
- * quantity controls and a remove button. Product images link to their
- * detail pages. "Add More Items" and "Proceed to Checkout" sit side by
- * side at the bottom -- checking out itself is a separate step, handled
- * on the /checkout page.
- */
 const Cart = () => {
   const { items, dispatch } = useCart();
   const navigate = useNavigate();
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
+  const totalPrice = calculateTotalPrice(items);
 
   return (
     <div className="cart-page">
@@ -37,8 +28,6 @@ const Cart = () => {
                 <p className="cart-price">${item.price.toFixed(2)} each</p>
               </div>
 
-              {/* Wrapped together so, on narrow screens, this whole
-                  group can drop to its own line as one unit. */}
               <div className="cart-row-actions">
                 <div className="cart-quantity">
                   <button

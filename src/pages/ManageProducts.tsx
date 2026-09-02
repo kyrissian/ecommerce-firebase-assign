@@ -8,6 +8,7 @@ import {
 } from "../api/api";
 import type { Product } from "../types/types";
 import { toast } from "react-toastify";
+import { isValidImageUrl } from "../utils/validators";
 import "./ManageProducts.css";
 
 const ManageProducts: React.FC = () => {
@@ -96,6 +97,12 @@ const ManageProducts: React.FC = () => {
     },
   });
 
+  /**
+   * Validates that every field on a product (new or edited) has been
+   * filled in, and that the image field is at least a well-formed
+   * http/https URL (not a guarantee it's a real image, just catches
+   * obviously malformed input).
+   */
   const validateProduct = (product: Omit<Product, "id">): boolean => {
     if (
       !product.title.trim() ||
@@ -108,6 +115,12 @@ const ManageProducts: React.FC = () => {
     }
     if (!product.price || product.price <= 0) {
       toast.error("Price must be greater than 0.");
+      return false;
+    }
+    if (!isValidImageUrl(product.image)) {
+      toast.error(
+        "Please enter a valid image URL (starting with http:// or https://).",
+      );
       return false;
     }
     return true;

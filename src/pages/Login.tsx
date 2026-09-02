@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
 import styles from "../styles/auth-styles";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { toast } from "react-toastify";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
 
 /**
  * Login page. Authenticates via Firebase Auth's email/password sign-in.
- * On success, redirects to Home (rather than Profile) with a welcome
- * toast. If an already-logged-in user somehow lands here, they're
- * immediately redirected to Home too, rather than seeing the form.
+ * On success, redirects admins to Manage Products and everyone else to
+ * Home, with a welcome toast. If an already-logged-in user somehow
+ * lands here, they're redirected the same way.
  */
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -41,11 +40,6 @@ const Login = () => {
         `Welcome back, ${userCredential.user.displayName || "there"}!`,
       );
 
-      // Check the user's role directly here, rather than relying on
-      // AuthContext's `profile` state -- that updates via a separate
-      // onAuthStateChanged listener that may not have resolved yet at
-      // this exact moment, so we look it up fresh to decide where to
-      // send them.
       const userDocSnap = await getDoc(
         doc(db, "users", userCredential.user.uid),
       );

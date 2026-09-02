@@ -8,13 +8,10 @@ import {
 } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
+import { isValidPhone } from "../utils/validators";
 import "./Profile.css";
-
-/** Matches exactly xxx-xxx-xxxx -- three digits, dash, three digits,
- * dash, four digits. */
-const PHONE_PATTERN = /^\d{3}-\d{3}-\d{4}$/;
 
 /**
  * User's profile page. Lets a logged-in user view and edit their
@@ -44,11 +41,6 @@ const Profile: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
-  /**
-   * Saves the edited display name to both Firebase Auth and the matching
-   * Firestore "users" document, so the two stay in sync -- Auth's
-   * updateProfile alone doesn't touch Firestore at all.
-   */
   const handleUpdateName = async () => {
     if (!user) return;
     setError("");
@@ -67,18 +59,12 @@ const Profile: React.FC = () => {
     }
   };
 
-  /**
-   * Validates the phone format, saves address and phone to Firestore,
-   * then immediately updates the local `profile` state via setProfile --
-   * without this, the change would be correctly saved in Firestore but
-   * the UI would keep showing stale data until the next full login.
-   */
   const handleUpdateContact = async () => {
     if (!user) return;
     setError("");
     setSuccess("");
 
-    if (phone && !PHONE_PATTERN.test(phone)) {
+    if (phone && !isValidPhone(phone)) {
       setError("Phone number must be in the format xxx-xxx-xxxx.");
       return;
     }
@@ -97,12 +83,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  /**
-   * Changes the user's password. Firebase requires re-authenticating
-   * with the current password first, as a security measure, before
-   * allowing a password change -- that's what reauthenticateWithCredential
-   * handles here.
-   */
   const handleChangePassword = async () => {
     if (!user || !user.email) return;
     setError("");
@@ -127,11 +107,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  /**
-   * Permanently deletes the user's Firebase Auth account, after a
-   * confirmation prompt. Redirects to /register afterward since the
-   * user no longer has an account to be logged into.
-   */
   const handleDeleteAccount = async () => {
     if (!user) return;
     const confirmed = window.confirm(
@@ -144,10 +119,6 @@ const Profile: React.FC = () => {
       await deleteUser(user);
       navigate("/register");
     } catch (error: unknown) {
-      // Firebase requires a recent login before allowing sensitive
-      // actions like account deletion. If the user's session is older,
-      // it throws this specific error code rather than a generic one --
-      // worth a clearer message than Firebase's raw technical text.
       if (
         error instanceof Error &&
         error.message.includes("auth/requires-recent-login")
@@ -165,10 +136,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  // Guards the whole page: if nobody's logged in, nothing below this
-  // renders at all -- unrelated to the recent-login check above, which
-  // only applies to the delete-account action for an already-logged-in
-  // user whose session happens to be old.
   if (!user) {
     return <p>You must be logged in to view this page.</p>;
   }
