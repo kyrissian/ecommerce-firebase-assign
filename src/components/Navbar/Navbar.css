@@ -17,6 +17,12 @@
   gap: 0.5rem;
 }
 
+.nav-links-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .link {
   color: #ffffff;
   text-decoration: none;
@@ -76,6 +82,14 @@
     width: auto;
     margin-top: -6px;
     margin-bottom: -6px;
+  }
+
+  /* On the row below the logo, spread the toggle and the links group
+     to opposite edges -- toggle on the left, cart/Profile/Logout
+     grouped together on the right. */
+  .nav-right {
+    flex-basis: 100%;
+    justify-content: space-between;
   }
 
   .link {
