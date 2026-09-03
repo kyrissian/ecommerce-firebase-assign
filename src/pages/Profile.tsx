@@ -45,6 +45,12 @@ const Profile: React.FC = () => {
     if (!user) return;
     setError("");
     setSuccess("");
+
+    if (!displayName.trim()) {
+      setError("Name cannot be blank.");
+      return;
+    }
+
     try {
       await updateProfile(user, { displayName });
       await updateDoc(doc(db, "users", user.uid), { displayName });
