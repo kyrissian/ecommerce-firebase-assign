@@ -23,6 +23,18 @@
   gap: 0.5rem;
 }
 
+/* Desktop: visually push the toggle after the cart/auth links group,
+   so it sits on the far right, past Login/Logout. Achieved with
+   `order` rather than reordering the JSX, so the mobile layout (toggle
+   on the left) can independently reset this without touching markup. */
+.theme-toggle-btn {
+  order: 2;
+}
+
+.nav-links-group {
+  order: 1;
+}
+
 .link {
   color: #ffffff;
   text-decoration: none;
@@ -95,5 +107,15 @@
   .link {
     font-size: 0.9rem;
     padding: 0.3rem 0.4rem;
+  }
+
+  /* Reset back to toggle-left/links-right on mobile, undoing the
+     desktop reordering above. */
+  .theme-toggle-btn {
+    order: 1;
+  }
+
+  .nav-links-group {
+    order: 2;
   }
 }
