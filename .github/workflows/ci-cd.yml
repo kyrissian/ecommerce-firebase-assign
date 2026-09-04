@@ -1,0 +1,42 @@
+name: eCommerce Firebase App CI/CD
+
+on:
+  push:
+    branches:
+      - main # Trigger the workflow on pushes to the main branch
+      - master # Trigger the workflow on pushes to the master branch
+  pull_request:
+    branches:
+      - main # Trigger the workflow on pull requests to the main branch
+      - master # Trigger the workflow on pull requests to the master branch
+
+jobs:
+  build: # Continuous Integration (CI) job
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step  1: checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+        # Step 2: Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18" # Specify the Node.js version you want to use
+
+        # Step 3: Install dependencies, run tests, and build the project
+      - name: Install dependencies
+        run: npm install
+
+        # Step 4: Run tests and build the project
+      - name: Run tests # Normally, there could be 30-40 tests, but for the sake of this example, we will run only a few tests.
+        run: npm test
+
+        # Step 5: Build REACT app
+      - name: Build REACT app
+        run: npm run build
+
+
+        # For this to work, we have to push our code to gitHub and then we can go to the settings of the repository and then 
+        # we can go to the pages and then we can select the branch and then we can select the folder where we want to deploy our app. 
