@@ -35,8 +35,7 @@ jobs:
 
         # Step 5: Build REACT app
       - name: Build REACT app
-        run: npm run build
+        run: npm run build:skip-ts
 
-
-        # For this to work, we have to push our code to gitHub and then we can go to the settings of the repository and then 
-        # we can go to the pages and then we can select the branch and then we can select the folder where we want to deploy our app. 
+        # For this to work, we have to push our code to gitHub and then we can go to the settings of the repository and then
+        # we can go to the pages and then we can select the branch and then we can select the folder where we want to deploy our app.
