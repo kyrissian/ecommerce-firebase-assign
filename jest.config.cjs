@@ -3,8 +3,10 @@ module.exports = {
   testEnvironment: "jsdom",
   moduleDirectories: ["node_modules", "src"],
   setupFiles: ["<rootDir>/jest.setup.ts"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup-after-env.ts"],
   moduleNameMapper: {
     "^(.*/)?firebaseConfig$": "<rootDir>/src/__mocks__/firebaseConfig.ts",
+    "\\.(css|less|scss|sass)$": "identity-obj-proxy",
   },
   transform: {
     "^.+\\.tsx?$": [
@@ -15,7 +17,7 @@ module.exports = {
           esModuleInterop: true,
           verbatimModuleSyntax: false,
           module: "commonjs",
-          types: ["jest", "node"],
+          types: ["jest", "node", "vite/client"],
         },
       },
     ],
