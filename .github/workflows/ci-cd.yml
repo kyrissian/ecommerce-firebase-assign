@@ -63,4 +63,4 @@ jobs:
       - name: Deploy to Vercel
         run: |
           npm install -g vercel
-          vercel --prod --yes --token ${{ secrets.VERCEL_ecommerce_02 }}
+          vercel --prod --yes --token ${{ secrets.VERCEL_eCommerce_02 }}
