@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import "whatwg-fetch";
 import { TextEncoder, TextDecoder } from "util";
 
