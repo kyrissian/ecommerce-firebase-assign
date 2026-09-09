@@ -20,6 +20,9 @@ const Checkout: React.FC = () => {
     profile?.address ?? "",
   );
   const [phone, setPhone] = useState(profile?.phone ?? "");
+  const [didEditRecipientName, setDidEditRecipientName] = useState(false);
+  const [didEditAddress, setDidEditAddress] = useState(false);
+  const [didEditPhone, setDidEditPhone] = useState(false);
 
   // Tracks whether the person has manually clicked the "save to
   // profile" checkbox themselves. null means "not touched yet" -- in
@@ -42,6 +45,24 @@ const Checkout: React.FC = () => {
       navigate("/login");
     }
   }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    if (!didEditRecipientName) {
+      setRecipientName(user?.displayName ?? "");
+    }
+  }, [didEditRecipientName, user?.displayName]);
+
+  useEffect(() => {
+    if (!didEditAddress) {
+      setShippingAddress(profile?.address ?? "");
+    }
+  }, [didEditAddress, profile?.address]);
+
+  useEffect(() => {
+    if (!didEditPhone) {
+      setPhone(profile?.phone ?? "");
+    }
+  }, [didEditPhone, profile?.phone]);
 
   const hasNoSavedContact = !profile?.address && !profile?.phone;
   const addressChanged = shippingAddress !== (profile?.address ?? "");
@@ -157,7 +178,10 @@ const Checkout: React.FC = () => {
             <input
               id="recipient-name"
               value={recipientName}
-              onChange={(e) => setRecipientName(e.target.value)}
+              onChange={(e) => {
+                setDidEditRecipientName(true);
+                setRecipientName(e.target.value);
+              }}
               placeholder="Full name"
             />
           </div>
@@ -167,7 +191,10 @@ const Checkout: React.FC = () => {
             <input
               id="shipping-address"
               value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
+              onChange={(e) => {
+                setDidEditAddress(true);
+                setShippingAddress(e.target.value);
+              }}
               placeholder="123 Main St, Anytown, USA"
             />
           </div>
@@ -178,7 +205,10 @@ const Checkout: React.FC = () => {
               id="shipping-phone"
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => {
+                setDidEditPhone(true);
+                setPhone(e.target.value);
+              }}
               placeholder="xxx-xxx-xxxx"
             />
           </div>

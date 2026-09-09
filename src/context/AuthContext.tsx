@@ -22,42 +22,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
+    let isActive = true;
+    let latestAuthEvent = 0;
 
-        // The Firestore profile lookup is wrapped in its own try/catch
-        // (rather than letting a failure bubble up) because
-        // onAuthStateChanged's callback isn't awaited or caught by
-        // Firebase itself -- an unhandled rejection here would silently
-        // vanish, leaving `authLoading` stuck at `true` forever (since
-        // the line below would never run) and every ProtectedRoute in
-        // the app stranded on its "Loading..." state with no way out.
-        try {
-          const userDocRef = doc(db, "users", firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          setProfile(
-            userDocSnap.exists() ? (userDocSnap.data() as UserProfile) : null,
-          );
-        } catch (error) {
-          console.error("Failed to load user profile:", error);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      const authEventId = ++latestAuthEvent;
+
+      const syncAuthState = async () => {
+        if (!isActive) return;
+
+        if (firebaseUser) {
+          setUser(firebaseUser);
+
+          // The Firestore profile lookup is wrapped in its own try/catch
+          // (rather than letting a failure bubble up) because
+          // onAuthStateChanged's callback isn't awaited or caught by
+          // Firebase itself -- an unhandled rejection here would silently
+          // vanish, leaving `authLoading` stuck at `true` forever (since
+          // the line below would never run) and every ProtectedRoute in
+          // the app stranded on its "Loading..." state with no way out.
+          try {
+            const userDocRef = doc(db, "users", firebaseUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            // Ignore stale async completions from an older auth event.
+            if (!isActive || authEventId !== latestAuthEvent) return;
+
+            setProfile(
+              userDocSnap.exists() ? (userDocSnap.data() as UserProfile) : null,
+            );
+          } catch (error) {
+            if (!isActive || authEventId !== latestAuthEvent) return;
+            console.error("Failed to load user profile:", error);
+            setProfile(null);
+            toast.error(
+              "Couldn't load your profile. Some features may be limited.",
+            );
+          }
+        } else {
+          setUser(null);
           setProfile(null);
-          toast.error(
-            "Couldn't load your profile. Some features may be limited.",
-          );
         }
-      } else {
-        setUser(null);
-        setProfile(null);
-      }
 
-      // Runs regardless of whether the profile lookup above succeeded,
-      // failed, or was skipped (logged-out case) -- authLoading must
-      // always resolve so the rest of the app isn't left waiting.
-      setAuthLoading(false);
+        // Runs regardless of whether the profile lookup above succeeded,
+        // failed, or was skipped (logged-out case) -- authLoading must
+        // always resolve so the rest of the app isn't left waiting.
+        if (isActive && authEventId === latestAuthEvent) {
+          setAuthLoading(false);
+        }
+      };
+
+      void syncAuthState();
     });
 
-    return () => unsubscribe();
+    return () => {
+      isActive = false;
+      unsubscribe();
+    };
   }, []);
 
   return (

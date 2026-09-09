@@ -17,7 +17,7 @@ module.exports = {
           esModuleInterop: true,
           verbatimModuleSyntax: false,
           module: "commonjs",
-          types: ["jest", "node", "vite/client"],
+          types: ["jest", "node", "vite/client", "@testing-library/jest-dom"],
         },
       },
     ],

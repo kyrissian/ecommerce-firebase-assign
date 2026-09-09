@@ -1,66 +1,97 @@
 name: eCommerce Firebase App CI/CD
 
 on:
+  # Run full CI/CD validation on direct pushes to main.
   push:
     branches:
-      - main # Trigger the workflow on pushes to the main branch
-      - master # Trigger the workflow on pushes to the master branch
+      - main
+  # Also run CI checks on PRs targeting main.
   pull_request:
     branches:
-      - main # Trigger the workflow on pull requests to the main branch
-      - master # Trigger the workflow on pull requests to the master branch
+      - main
 
 jobs:
-  build: # Continuous Integration (CI) job
+  # Continuous Integration: install, test, then build.
+  ci:
+    name: Test and Build
     runs-on: ubuntu-latest
 
     steps:
-      # Step  1: checkout the code
+      # Step 1: pull down repository code for this job.
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-        # Step 2: Set up Node.js environment
+      # Step 2: use a consistent Node version and cache npm data.
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "22" # Specify the Node.js version you want to use
+          node-version: 22
+          cache: npm
 
-        # Step 3: Install dependencies, run tests, and build the project
+      # Step 3: deterministic dependency install from package-lock.json.
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-        # Step 4: Run tests and build the project
-      - name: Run tests # Normally, there could be 30-40 tests, but for the sake of this example, we will run only a few tests.
-        run: npm test
+      # Step 4: test gate. If this fails, build/deploy do not proceed.
+      - name: Run test suite
+        run: npm test -- --ci --runInBand
 
-        # Step 5: Build REACT app
-      - name: Build REACT app
-        run: npm run build:skip-ts
+      # Step 5: production build validation.
+      - name: Build app
+        run: npm run build
 
-        # For this to work, we have to push our code to gitHub and then we can go to the settings of the repository and then
-        # we can go to the pages and then we can select the branch and then we can select the folder where we want to deploy our app.
-
+  # Continuous Deployment: only runs after CI passes.
   deploy:
+    name: Deploy to Vercel
     runs-on: ubuntu-latest
-    needs: build # Ensure the deploy job runs after the build job completes successfully
+    # Hard dependency on CI success.
+    needs: ci
+    # Deploy only from direct pushes on main (not pull requests).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      # Prefer VERCEL_TOKEN. Keep legacy token name as fallback.
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN != '' && secrets.VERCEL_TOKEN || secrets.VERCEL_eCommerce_02 }}
+      # Vercel project linkage values.
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
-      # Step  1: checkout the code
+      # Step 1: checkout source.
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-        # Step 2: Set up Node.js environment
+      # Step 2: setup runtime.
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "22" # Specify the Node.js version you want to use
+          node-version: 22
+          cache: npm
 
-        # Step 3: Install dependencies, run tests, and build the project
-      - name: Install dependencies
-        run: npm install
+      # Step 3: install Vercel CLI for pull/build/deploy commands.
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-        # Step 4: Deploy to Vercel (or another platform like Netlify or GitHub Pages)
-      - name: Deploy to Vercel
+      # Step 4: fail fast with clear secret guidance.
+      - name: Validate Vercel secrets
         run: |
-          npm install -g vercel
-          vercel --prod --yes --token ${{ secrets.VERCEL_eCommerce_02 }}
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::Missing Vercel token. Add GitHub secret VERCEL_TOKEN (preferred) or legacy VERCEL_eCommerce_02."
+            exit 1
+          fi
+
+          if [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::error::Missing VERCEL_ORG_ID or VERCEL_PROJECT_ID secrets."
+            exit 1
+          fi
+
+      # Step 5: pull environment/project metadata for reproducible build.
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+
+      # Step 6: build on GitHub runner using Vercel build logic.
+      - name: Build Vercel artifacts
+        run: vercel build --prod --token=$VERCEL_TOKEN
+
+      # Step 7: deploy prebuilt artifacts to production.
+      - name: Deploy prebuilt artifacts
+        run: vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN

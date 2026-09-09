@@ -6,7 +6,7 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -22,10 +22,8 @@ import "./Profile.css";
  * display name, contact info (address/phone), change their password,
  * view their order history, and delete their account entirely.
  *
- * Note: deleting an account only removes the Firebase Auth login --
- * the matching Firestore "users" document is intentionally kept
- * (Security Rules block deletion of it), a common practice for
- * legal/audit record-keeping even after account closure.
+ * Deleting an account removes both the Firebase Auth login and the
+ * matching Firestore user document.
  */
 const Profile: React.FC = () => {
   const { user, profile, setProfile } = useAuth();
@@ -123,6 +121,7 @@ const Profile: React.FC = () => {
 
   const handleDeleteAccount = async () => {
     if (!user) return;
+    const uid = user.uid;
     const confirmed = window.confirm(
       "Are you sure you want to delete your account? This cannot be undone.",
     );
@@ -131,6 +130,18 @@ const Profile: React.FC = () => {
     setError("");
     try {
       await deleteUser(user);
+
+      // Best effort cleanup: if this fails, the auth account is already
+      // deleted, so we log and continue navigation.
+      try {
+        await deleteDoc(doc(db, "users", uid));
+      } catch (cleanupError) {
+        console.error(
+          "Failed to delete Firestore profile during cleanup:",
+          cleanupError,
+        );
+      }
+
       navigate("/register");
     } catch (error: unknown) {
       // Firebase requires a recent login before allowing account
@@ -193,7 +204,10 @@ const Profile: React.FC = () => {
             </span>
             <button
               className="profile-btn profile-btn-secondary"
-              onClick={() => setIsEditingName(true)}
+              onClick={() => {
+                setDisplayName(user?.displayName ?? "");
+                setIsEditingName(true);
+              }}
             >
               Edit
             </button>
@@ -255,7 +269,11 @@ const Profile: React.FC = () => {
             </div>
             <button
               className="profile-btn profile-btn-secondary"
-              onClick={() => setIsEditingContact(true)}
+              onClick={() => {
+                setAddress(profile?.address ?? "");
+                setPhone(profile?.phone ?? "");
+                setIsEditingContact(true);
+              }}
             >
               Edit
             </button>

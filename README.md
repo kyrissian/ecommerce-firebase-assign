@@ -9,7 +9,7 @@
 ![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?logo=reactquery&logoColor=white&style=flat-square)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white&style=flat-square)
 
-A full-stack e-commerce web app built with React, TypeScript, and Firebase (Authentication + Firestore). Originally built on FakeStoreAPI, then fully migrated to Firebase for product management, user accounts, and order history.
+A full-stack e-commerce web app built with React, TypeScript, and Firebase (Authentication + Firestore). Originally built on FakeStoreAPI, then fully migrated to Firebase for product management, user accounts, and order history, and later extended with a complete CI/CD pipeline to Vercel via GitHub Actions.
 
 **Repo:** https://github.com/kyrissian/ecommerce-firebase-assign
 **Live App:** https://ecommerce-firebase-assign.vercel.app
@@ -18,6 +18,7 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 
 ## Table of Contents
 
+- [Changelog](#changelog)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
@@ -31,6 +32,28 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 
 ---
 
+## Changelog
+
+### 2026-09-09: CI/CD + Reliability Update
+
+- Added a full GitHub Actions CI/CD workflow in `.github/workflows/main.yml`.
+- CI now runs deterministic installs (`npm ci`), Jest tests in CI mode, and a full production build.
+- CD now deploys to Vercel only after CI succeeds, and only for pushes to `main`.
+- Added Vercel secret validation and token fallback support (`VERCEL_TOKEN` preferred, `VERCEL_eCommerce_02` fallback).
+- Expanded test coverage with auth-focused edge-case tests for loading states, Firebase error handling, and cleanup behavior.
+- Added AuthContext subscription cleanup verification to reduce memory leak risk.
+- Introduced route-level lazy loading and vendor chunk splitting to improve initial load performance.
+
+### 2026-09-09: Firebase Migration Completion
+
+- Completed migration from FakeStoreAPI to Firestore for product CRUD.
+- Implemented Firebase Authentication register/login/logout flows.
+- Added Firestore-backed user profile create/read/update patterns.
+- Implemented order creation and order history retrieval from Firestore.
+- Added role-gated admin product management route.
+
+---
+
 ## Features
 
 ### Authentication & User Management
@@ -40,7 +63,8 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 - Role-based access: every new account defaults to `"customer"`; `"admin"` accounts are promoted manually via the Firebase console
 - **Role-aware post-login redirect** — admins land on the Manage Products dashboard, customers land on the storefront, with a race-condition-safe check against Firestore (not just cached client state) at the exact moment of login
 - Editable profile: display name, address, and phone number, all synced between Firebase Auth and Firestore so the two never drift out of sync
-- Change password (with required re-authentication, per Firebase's security requirements) and delete account, with clear messaging if a recent login is required first
+- Change password (with required re-authentication, per Firebase's security requirements)
+- Delete account with explicit confirmation, recent-login handling, and best-effort Firestore profile cleanup after successful Auth deletion
 - Phone number format validation (`xxx-xxx-xxxx`)
 
 ### Product Catalog
@@ -86,6 +110,7 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 - Sticky navbar with a scroll-to-top button that appears once scrolled
 - Fully responsive layout, tested down to narrow mobile widths
 - Custom SVG logo and brand identity ("The Daily Haul")
+- Route-level lazy loading with `React.lazy` + `Suspense` so non-home pages load on demand
 
 ---
 
@@ -95,14 +120,14 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Frontend framework     | React 19 + TypeScript                                                                                                                                                                 |
 | Build tool             | Vite                                                                                                                                                                                  |
-| Routing                | React Router v6                                                                                                                                                                       |
+| Routing                | React Router                                                                                                                                                                          |
 | Server state / caching | TanStack Query (React Query) — used for all product/category/order data fetching, with automatic cache invalidation after mutations so admin changes reflect across the app instantly |
 | Client state           | React Context + `useReducer` (cart, product list, auth)                                                                                                                               |
 | Backend                | Firebase Authentication + Cloud Firestore                                                                                                                                             |
 | Styling                | Plain CSS with a shared CSS custom-property design system (`theme.css`) for consistent theming, including dark mode                                                                   |
 | Notifications          | react-toastify                                                                                                                                                                        |
 | Rating display         | @smastrom/react-rating                                                                                                                                                                |
-| CI/CD                  | GitHub Actions (test → build → deploy) + Vercel                                                                                                                                       |
+| CI/CD                  | GitHub Actions (CI test/build gate + CD deploy) + Vercel CLI                                                                                                                          |
 | Testing                | Jest, ts-jest, React Testing Library                                                                                                                                                  |
 
 ---
@@ -155,7 +180,7 @@ The app will be available at `http://localhost:5173`.
    - `products` — product catalog
    - `users` — one document per registered user, keyed by their Firebase Auth `uid`
    - `orders` — one document per placed order
-3. **Security Rules** — publish the rules found in `firestore.rules` (or paste directly into the Firestore Rules tab in the console). These are the actual enforcement layer — see [Security](#security) below.
+3. **Security Rules** — publish your rules in the Firestore Rules tab in the Firebase console. These are the actual enforcement layer — see [Security](#security) below.
 4. **Creating an admin account** — register normally through the app, then manually edit that user's Firestore document (`users/{uid}`) and change its `role` field from `"customer"` to `"admin"`.
 
 ---
@@ -164,19 +189,62 @@ The app will be available at `http://localhost:5173`.
 
 This project uses GitHub Actions for continuous integration and deployment, defined in `.github/workflows/main.yml`.
 
-**On every push to `main`:**
+### Continuous Integration (CI)
 
-1. **Install dependencies** — `npm install`
-2. **Run tests** — the full Jest suite (`npm test`) runs first. If any test fails, the pipeline stops here and nothing further runs, preventing broken code from ever reaching build or deploy.
-3. **Build** — `vite build` compiles the production bundle, only if tests passed.
-4. **Deploy** — the build is deployed to Vercel via the Vercel CLI, authenticated with a scoped API token stored in GitHub Secrets. This only runs after both prior steps succeed.
+Runs on:
 
-Vercel's own automatic Git-based deployments are intentionally disabled for this project, so that GitHub Actions — and its test gate — is the sole path to production. This avoids duplicate/competing deployments and ensures no code reaches the live app without passing its test suite first.
+- Pushes to `main`
+- Pull requests targeting `main`
+
+CI steps:
+
+1. **Install dependencies** — `npm ci` for deterministic installs from `package-lock.json`.
+2. **Run tests** — `npm test -- --ci --runInBand`.
+3. **Build** — `npm run build` (`tsc -b && vite build`).
+
+If tests fail, the workflow fails and deployment is blocked.
+
+### Continuous Deployment (CD)
+
+Deploy runs only when:
+
+- CI has passed
+- Event is a push to `main` (no deploys from pull requests)
+
+CD steps:
+
+1. **Install Vercel CLI**
+2. **Validate required secrets** (fails fast with clear guidance)
+3. **Pull Vercel environment metadata** — `vercel pull`
+4. **Build Vercel artifacts** — `vercel build --prod`
+5. **Deploy prebuilt artifacts** — `vercel deploy --prebuilt --prod`
+
+Required GitHub Secrets:
+
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+- Token: `VERCEL_TOKEN` (preferred) or legacy `VERCEL_eCommerce_02` (fallback)
+
+Vercel's own automatic Git-based deployments are intentionally disabled for this project, so GitHub Actions and its test gate are the only path to production.
+
+### Performance Build Notes
+
+- Route-level splitting is implemented in `src/App.tsx` using dynamic imports.
+- Additional vendor chunking is configured in `vite.config.ts` (React, Firebase core/auth/firestore, query, and UI buckets).
+- `chunkSizeWarningLimit` is set to 550 kB to reduce near-threshold warning noise after chunk splitting.
 
 ### Testing
 
 - **Unit tests**: `ProductCard` (rendering + "Add to Cart" click behavior) and `Cart` (empty state + quantity update behavior), each with `useCart` mocked for isolation.
 - **Integration test**: renders the real `CartProvider`, `ProductCard`, and `Cart` together (no mocks) to verify that adding a product from the catalog actually updates the cart state end-to-end.
+- **Auth edge-case tests**:
+  - `Login` shows friendly Firebase error text on auth failure.
+  - `Login` disables submit and shows loading copy while auth request is pending.
+  - `Register` shows a specific recovery message if Auth succeeds but Firestore profile setup fails.
+  - `AuthProvider` resolves `authLoading` and emits a user-facing toast when profile fetch fails.
+  - `AuthProvider` unsubscribes from `onAuthStateChanged` on unmount to protect against memory leaks.
+
+Current suite status: 7 test suites, 16 tests.
 
 Run the suite locally with:
 
@@ -210,6 +278,8 @@ src/
 - **React Query + Context split**: product data fetching (network requests, caching, loading/error states) is handled entirely by React Query; the fetched results are then synced into a lightweight Context/reducer so other parts of the app can read the same product list without re-fetching.
 - **URL as state**: search, sort, and category filters on the storefront live in the URL's query string via `useSearchParams`, not local component state — this is what makes filtered views shareable and gives back/forward browser navigation the behavior users expect.
 - **Denormalized order data**: each order stores a full snapshot of its items (title, price, image, quantity) rather than references to live product documents, so a customer's order history always reflects what they actually paid — even if a product's price or details change later.
+- **Auth/profile race protection**: `AuthContext` guards async profile reads so stale auth callbacks cannot overwrite newer state.
+- **Profile/checkout form synchronization**: profile-derived form defaults update safely when async user/profile data arrives, while preserving user edits.
 
 ---
 
@@ -233,7 +303,7 @@ A few deliberate tradeoffs, made with reasoning rather than by accident:
 
 - **Product images are linked, not hosted.** Image URLs for the original seeded catalog still point to FakeStoreAPI's CDN rather than Firebase Storage. All product _data_ — including the image field itself — lives fully in Firestore, satisfying the migration requirement; only the binary image files remain externally hosted. A production version of this app would upload images to Firebase Storage for full independence.
 - **Order history is sorted client-side**, not via a Firestore `orderBy` query. Combining our existing `where(userId == ...)` filter with `orderBy` would require creating a composite index in the Firebase console. Given the small number of orders per user, sorting the already-fetched list in JavaScript avoids that extra setup step with no meaningful performance cost at this scale.
-- **Deleting an account only removes the Firebase Auth login.** The matching Firestore `users` document is intentionally retained (blocked from deletion by Security Rules) — a common practice in production systems for legal/audit record-keeping even after account closure.
+- **Account deletion is two-step and best-effort for data consistency.** The app deletes the Auth account first, then attempts Firestore profile cleanup. If profile cleanup fails, login credentials are still removed and the cleanup failure is logged.
 - **Cart persistence is session-scoped by design.** Using `sessionStorage` (rather than `localStorage`) means a cart is intentionally tied to a single browser tab/session, not preserved indefinitely across devices or browser restarts.
 
 ---

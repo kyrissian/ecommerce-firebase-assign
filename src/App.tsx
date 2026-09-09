@@ -1,25 +1,26 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Profile from "./pages/Profile";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ProductProvider } from "./context/ProductContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
-import Cart from "./pages/Cart";
-import Logout from "./pages/Logout";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
 import Navbar from "./components/Navbar/Navbar";
-import ManageProducts from "./pages/ManageProducts";
 import ProtectedRoute from "./components/ProtectedRoute";
-import OrderHistory from "./pages/OrderHistory";
-import ProductDetail from "./pages/ProductDetail";
-import Checkout from "./pages/Checkout";
-import NotFound from "./pages/NotFound";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+const Home = lazy(() => import("./pages/Home"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Logout = lazy(() => import("./pages/Logout"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const ManageProducts = lazy(() => import("./pages/ManageProducts"));
+const OrderHistory = lazy(() => import("./pages/OrderHistory"));
 
 /**
  * Root component. Sets up global providers and all app routes.
@@ -52,36 +53,40 @@ function App() {
             <BrowserRouter>
               <Navbar />
               <ToastContainer position="bottom-right" autoClose={2500} />
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/products/:id" element={<ProductDetail />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/logout" element={<Logout />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                {/* Must be the LAST route -- React Router matches routes top to
+              <Suspense
+                fallback={<p className="status-message">Loading page...</p>}
+              >
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/products/:id" element={<ProductDetail />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/logout" element={<Logout />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  {/* Must be the LAST route -- React Router matches routes top to
     bottom, and "*" catches any URL that didn't match one above it. */}
-                <Route path="*" element={<NotFound />} />
+                  <Route path="*" element={<NotFound />} />
 
-                {/* Admin-only: ProtectedRoute redirects anyone whose
+                  {/* Admin-only: ProtectedRoute redirects anyone whose
                     Firestore profile role isn't "admin" back to home. */}
-                <Route
-                  path="/manage-products"
-                  element={
-                    <ProtectedRoute requiredRole="admin">
-                      <ManageProducts />
-                    </ProtectedRoute>
-                  }
-                />
+                  <Route
+                    path="/manage-products"
+                    element={
+                      <ProtectedRoute requiredRole="admin">
+                        <ManageProducts />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Not wrapped in ProtectedRoute -- OrderHistory handles
+                  {/* Not wrapped in ProtectedRoute -- OrderHistory handles
                     its own "must be logged in" check internally, since
                     any logged-in user (not just admins) can view their
                     own order history. */}
-                <Route path="/orders" element={<OrderHistory />} />
-              </Routes>
+                  <Route path="/orders" element={<OrderHistory />} />
+                </Routes>
+              </Suspense>
             </BrowserRouter>
           </CartProvider>
         </AuthProvider>
