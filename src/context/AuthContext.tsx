@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { toast } from "react-toastify";
 import { auth, db } from "../firebaseConfig";
 import AuthContext, { type UserProfile } from "./authContextInstance";
 
@@ -21,23 +22,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
 
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (userDocSnap.exists()) {
-          setProfile(userDocSnap.data() as UserProfile);
-        } else {
+        // The Firestore profile lookup is wrapped in its own try/catch
+        // (rather than letting a failure bubble up) because
+        // onAuthStateChanged's callback isn't awaited or caught by
+        // Firebase itself -- an unhandled rejection here would silently
+        // vanish, leaving `authLoading` stuck at `true` forever (since
+        // the line below would never run) and every ProtectedRoute in
+        // the app stranded on its "Loading..." state with no way out.
+        try {
+          const userDocRef = doc(db, "users", firebaseUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          setProfile(
+            userDocSnap.exists() ? (userDocSnap.data() as UserProfile) : null,
+          );
+        } catch (error) {
+          console.error("Failed to load user profile:", error);
           setProfile(null);
+          toast.error(
+            "Couldn't load your profile. Some features may be limited.",
+          );
         }
       } else {
         setUser(null);
         setProfile(null);
       }
 
+      // Runs regardless of whether the profile lookup above succeeded,
+      // failed, or was skipped (logged-out case) -- authLoading must
+      // always resolve so the rest of the app isn't left waiting.
       setAuthLoading(false);
     });
 

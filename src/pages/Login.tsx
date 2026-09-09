@@ -6,6 +6,7 @@ import styles from "../styles/auth-styles";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { toast } from "react-toastify";
+import { getAuthErrorMessage } from "../utils/firebaseErrors";
 
 /**
  * Login page. Authenticates via Firebase Auth's email/password sign-in.
@@ -17,6 +18,11 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  // Tracks whether the sign-in request is currently in flight, so the
+  // button can disable itself and show progress -- prevents a slow
+  // network from letting someone double-submit the form, and gives
+  // visible feedback instead of the form appearing to do nothing.
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -29,6 +35,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -47,11 +54,9 @@ const Login = () => {
 
       navigate(role === "admin" ? "/manage-products" : "/");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("An unexpected error occurred.");
-      }
+      setError(getAuthErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -76,8 +81,8 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button type="submit" style={styles.button}>
-            Login
+          <button type="submit" style={styles.button} disabled={isSubmitting}>
+            {isSubmitting ? "Logging in..." : "Login"}
           </button>
         </fieldset>
       </form>

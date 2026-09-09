@@ -11,6 +11,10 @@ import { db } from "../firebaseConfig";
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 import { isValidPhone } from "../utils/validators";
+import {
+  getAuthErrorMessage,
+  isRequiresRecentLoginError,
+} from "../utils/firebaseErrors";
 import "./Profile.css";
 
 /**
@@ -41,6 +45,13 @@ const Profile: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  // One shared "in flight" flag for whichever of the three save actions
+  // below is currently running. Only one edit section can be open at a
+  // time in this UI, so a single flag is enough to disable the active
+  // Save button and show progress without needing three near-identical
+  // booleans.
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleUpdateName = async () => {
     if (!user) return;
     setError("");
@@ -51,17 +62,16 @@ const Profile: React.FC = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
       await updateProfile(user, { displayName });
       await updateDoc(doc(db, "users", user.uid), { displayName });
       setSuccess("Name updated successfully.");
       setIsEditingName(false);
     } catch (error: unknown) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.",
-      );
+      setError(getAuthErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -75,17 +85,16 @@ const Profile: React.FC = () => {
       return;
     }
 
+    setIsSaving(true);
     try {
       await updateDoc(doc(db, "users", user.uid), { address, phone });
       setProfile(profile ? { ...profile, address, phone } : null);
       setSuccess("Contact info updated successfully.");
       setIsEditingContact(false);
     } catch (error: unknown) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.",
-      );
+      setError(getAuthErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -93,6 +102,7 @@ const Profile: React.FC = () => {
     if (!user || !user.email) return;
     setError("");
     setSuccess("");
+    setIsSaving(true);
     try {
       const credential = EmailAuthProvider.credential(
         user.email,
@@ -105,11 +115,9 @@ const Profile: React.FC = () => {
       setCurrentPassword("");
       setNewPassword("");
     } catch (error: unknown) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.",
-      );
+      setError(getAuthErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -125,19 +133,16 @@ const Profile: React.FC = () => {
       await deleteUser(user);
       navigate("/register");
     } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        error.message.includes("auth/requires-recent-login")
-      ) {
+      // Firebase requires a recent login before allowing account
+      // deletion -- checked via the error's `.code` (Firebase's stable
+      // identifier for this specific failure) rather than string-matching
+      // `.message`, which isn't guaranteed to stay the same wording.
+      if (isRequiresRecentLoginError(error)) {
         setError(
           "For security, please log out and log back in before deleting your account.",
         );
       } else {
-        setError(
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred.",
-        );
+        setError(getAuthErrorMessage(error));
       }
     }
   };
@@ -168,12 +173,14 @@ const Profile: React.FC = () => {
               <button
                 className="profile-btn profile-btn-primary"
                 onClick={handleUpdateName}
+                disabled={isSaving}
               >
-                Save
+                {isSaving ? "Saving..." : "Save"}
               </button>
               <button
                 className="profile-btn profile-btn-link"
                 onClick={() => setIsEditingName(false)}
+                disabled={isSaving}
               >
                 Cancel
               </button>
@@ -221,12 +228,14 @@ const Profile: React.FC = () => {
               <button
                 className="profile-btn profile-btn-primary"
                 onClick={handleUpdateContact}
+                disabled={isSaving}
               >
-                Save
+                {isSaving ? "Saving..." : "Save"}
               </button>
               <button
                 className="profile-btn profile-btn-link"
                 onClick={() => setIsEditingContact(false)}
+                disabled={isSaving}
               >
                 Cancel
               </button>
@@ -276,12 +285,14 @@ const Profile: React.FC = () => {
               <button
                 className="profile-btn profile-btn-primary"
                 onClick={handleChangePassword}
+                disabled={isSaving}
               >
-                Save
+                {isSaving ? "Saving..." : "Save"}
               </button>
               <button
                 className="profile-btn profile-btn-link"
                 onClick={() => setIsChangingPassword(false)}
+                disabled={isSaving}
               >
                 Cancel
               </button>

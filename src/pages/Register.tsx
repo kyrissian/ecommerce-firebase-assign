@@ -4,6 +4,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import styles from "../styles/auth-styles";
 import { useNavigate } from "react-router-dom";
+import { getAuthErrorMessage } from "../utils/firebaseErrors";
 
 /**
  * Registration page.
@@ -24,12 +25,16 @@ const Register = () => {
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  // See Login.tsx for why this exists -- disables the submit button and
+  // shows progress text while the (two-step) registration request runs.
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
     let userCredential;
     try {
@@ -39,11 +44,8 @@ const Register = () => {
         password,
       );
     } catch (error: unknown) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.",
-      );
+      setError(getAuthErrorMessage(error));
+      setIsSubmitting(false);
       return;
     }
 
@@ -67,6 +69,8 @@ const Register = () => {
         "Your account was created, but we couldn't finish setting up your " +
           "profile. Please try logging in, or contact support if this keeps happening.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -98,8 +102,8 @@ const Register = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button type="submit" style={styles.button}>
-            Register
+          <button type="submit" style={styles.button} disabled={isSubmitting}>
+            {isSubmitting ? "Creating account..." : "Register"}
           </button>
         </fieldset>
       </form>

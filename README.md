@@ -12,6 +12,7 @@
 A full-stack e-commerce web app built with React, TypeScript, and Firebase (Authentication + Firestore). Originally built on FakeStoreAPI, then fully migrated to Firebase for product management, user accounts, and order history.
 
 **Repo:** https://github.com/kyrissian/ecommerce-firebase-assign
+**Live App:** https://ecommerce-firebase-assign.vercel.app
 
 ---
 
@@ -21,6 +22,7 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Firebase Setup](#firebase-setup)
+- [CI/CD Pipeline](#cicd-pipeline)
 - [Project Structure](#project-structure)
 - [Architecture Notes](#architecture-notes)
 - [Security](#security)
@@ -100,6 +102,8 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 | Styling                | Plain CSS with a shared CSS custom-property design system (`theme.css`) for consistent theming, including dark mode                                                                   |
 | Notifications          | react-toastify                                                                                                                                                                        |
 | Rating display         | @smastrom/react-rating                                                                                                                                                                |
+| CI/CD                  | GitHub Actions (test → build → deploy) + Vercel                                                                                                                                       |
+| Testing                | Jest, ts-jest, React Testing Library                                                                                                                                                  |
 
 ---
 
@@ -156,6 +160,32 @@ The app will be available at `http://localhost:5173`.
 
 ---
 
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment, defined in `.github/workflows/main.yml`.
+
+**On every push to `main`:**
+
+1. **Install dependencies** — `npm install`
+2. **Run tests** — the full Jest suite (`npm test`) runs first. If any test fails, the pipeline stops here and nothing further runs, preventing broken code from ever reaching build or deploy.
+3. **Build** — `vite build` compiles the production bundle, only if tests passed.
+4. **Deploy** — the build is deployed to Vercel via the Vercel CLI, authenticated with a scoped API token stored in GitHub Secrets. This only runs after both prior steps succeed.
+
+Vercel's own automatic Git-based deployments are intentionally disabled for this project, so that GitHub Actions — and its test gate — is the sole path to production. This avoids duplicate/competing deployments and ensures no code reaches the live app without passing its test suite first.
+
+### Testing
+
+- **Unit tests**: `ProductCard` (rendering + "Add to Cart" click behavior) and `Cart` (empty state + quantity update behavior), each with `useCart` mocked for isolation.
+- **Integration test**: renders the real `CartProvider`, `ProductCard`, and `Cart` together (no mocks) to verify that adding a product from the catalog actually updates the cart state end-to-end.
+
+Run the suite locally with:
+
+```bash
+npm test
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -168,6 +198,8 @@ src/
   styles/         # Shared inline style objects (auth forms) + theme.css design tokens
   types/          # Shared TypeScript types (Product, Order, CartItem, etc.)
   utils/          # Shared helpers (validators, price calculations)
+  __tests__/      # Jest unit and integration tests
+  __mocks__/      # Manual mocks (e.g. firebaseConfig) used during tests
 ```
 
 ---

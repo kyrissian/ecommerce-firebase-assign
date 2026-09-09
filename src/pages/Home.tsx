@@ -2,8 +2,8 @@ import type { Category, Product } from "../types/types";
 import ProductCard from "../components/ProductCard";
 import { useProductContext } from "../context/useProductContext";
 import { useQuery } from "@tanstack/react-query";
-import { fetchProducts, fetchCategories } from "../api/api";
-import { useEffect } from "react";
+import { fetchProducts } from "../api/api";
+import { useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import "./Home.css";
 import ScrollToTopButton from "../components/ScrollToTopButton";
@@ -40,10 +40,14 @@ const Home: React.FC = () => {
     if (productsData) dispatch({ type: "SET_PRODUCTS", payload: productsData });
   }, [productsData, dispatch]);
 
-  const { data: categories } = useQuery({
-    queryKey: ["categories"],
-    queryFn: fetchCategories,
-  });
+  // Categories are just the unique `category` values across the
+  // products we already fetched above -- deriving them here (like
+  // ManageProducts does) avoids firing a second Firestore read for
+  // the entire products collection just to get a category list.
+  const categories = useMemo(() => {
+    if (!productsData) return [];
+    return Array.from(new Set(productsData.map((product) => product.category)));
+  }, [productsData]);
 
   /**
    * Updates a single URL query param without disturbing the others.
@@ -109,7 +113,7 @@ const Home: React.FC = () => {
           onChange={(e) => updateParam("category", e.target.value)}
         >
           <option value="">All Categories</option>
-          {categories?.map((category: Category) => (
+          {categories.map((category: Category) => (
             <option value={category} key={category}>
               {category}
             </option>

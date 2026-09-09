@@ -1,9 +1,8 @@
 import type { Product } from "../types/types";
 import { Rating } from "@smastrom/react-rating";
-import { useCart } from "../context/useCart";
+import { useAddToCart } from "../context/useAddToCart";
 import { Link } from "react-router-dom";
 import "./ProductCard.css";
-import { toast } from "react-toastify";
 
 /**
  * Displays a single product in the grid -- image, title, star rating,
@@ -16,7 +15,7 @@ import { toast } from "react-toastify";
  * (except the Add to Cart button) navigates to the detail page.
  */
 const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
-  const { dispatch } = useCart();
+  const addToCart = useAddToCart();
 
   return (
     <Link to={`/products/${product.id}`} className="product-card">
@@ -36,8 +35,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           // detail page -- we only want it to add to the cart here.
           e.preventDefault();
           e.stopPropagation();
-          dispatch({ type: "ADD_TO_CART", payload: product });
-          toast.success(`Added "${product.title}" to cart`);
+          addToCart(product);
         }}
       >
         Add to Cart

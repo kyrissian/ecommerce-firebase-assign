@@ -1,10 +1,9 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProductById } from "../api/api";
-import { useCart } from "../context/useCart";
+import { useAddToCart } from "../context/useAddToCart";
 import { Rating } from "@smastrom/react-rating";
 import "./ProductDetail.css";
-import { toast } from "react-toastify";
 
 /**
  * Dedicated page for a single product, reachable at /products/:id.
@@ -20,7 +19,7 @@ const ProductDetail: React.FC = () => {
   // useParams reads the dynamic :id segment out of the current URL --
   // e.g. visiting /products/aBc123 gives us { id: "aBc123" } here.
   const { id } = useParams<{ id: string }>();
-  const { dispatch } = useCart();
+  const addToCart = useAddToCart();
 
   const {
     data: product,
@@ -72,10 +71,7 @@ const ProductDetail: React.FC = () => {
 
           <button
             className="add-to-cart-btn"
-            onClick={() => {
-              dispatch({ type: "ADD_TO_CART", payload: product });
-              toast.success(`Added "${product.title}" to cart`);
-            }}
+            onClick={() => addToCart(product)}
           >
             Add to Cart
           </button>

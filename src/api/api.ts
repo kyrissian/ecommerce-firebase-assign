@@ -32,12 +32,6 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
   return { id: productSnap.id, ...productSnap.data() } as Product;
 };
 
-export const fetchCategories = async (): Promise<string[]> => {
-  const products = await fetchProducts();
-  const uniqueCategories = new Set(products.map((product) => product.category));
-  return Array.from(uniqueCategories);
-};
-
 export const createProduct = async (
   product: Omit<Product, "id">,
 ): Promise<void> => {
