@@ -10,6 +10,7 @@ const Cart = () => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = calculateTotalPrice(items);
 
+  // added comment for return
   return (
     <div className="cart-page">
       <h1>Your Cart</h1>
