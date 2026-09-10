@@ -8,6 +8,7 @@
 ![React Router](https://img.shields.io/badge/React_Router-CA4245?logo=reactrouter&logoColor=white&style=flat-square)
 ![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?logo=reactquery&logoColor=white&style=flat-square)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white&style=flat-square)
+[![CI/CD](https://github.com/kyrissian/ecommerce-firebase-assign/actions/workflows/main.yml/badge.svg)](https://github.com/kyrissian/ecommerce-firebase-assign/actions/workflows/main.yml)
 
 A full-stack e-commerce web app built with React, TypeScript, and Firebase (Authentication + Firestore). Originally built on FakeStoreAPI, then fully migrated to Firebase for product management, user accounts, and order history, and later extended with a complete CI/CD pipeline to Vercel via GitHub Actions.
 
@@ -33,6 +34,19 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 ---
 
 ## Changelog
+
+### 2026-09-09: Firebase Feedback Response
+
+- Fixed a bug where a failed Firestore profile lookup inside `AuthProvider` could leave `authLoading` stuck at `true` forever, stranding any `ProtectedRoute` on its loading state indefinitely. The profile lookup is now wrapped in its own try/catch and `authLoading` always resolves, with a toast shown if the lookup fails.
+- Added stale-callback protection to `AuthProvider`, so an older, still-in-flight `onAuthStateChanged` event can no longer overwrite state from a newer one.
+- Removed a redundant Firestore read: `Home` previously fetched the entire products collection a second time (via a separate `fetchCategories` call) just to build the category filter dropdown. Categories are now derived from the products already fetched by the page's main query.
+- Replaced raw Firebase error strings shown to users (e.g. `"Firebase: Error (auth/invalid-credential)."`) in Login, Register, and Profile with friendly messages via a shared `getAuthErrorMessage` helper, keyed off Firebase's stable error `.code` rather than fragile `.message` string-matching.
+- Added loading/disabled states to Login, Register, and Profile's save actions, matching the pattern already used in Checkout and Manage Products.
+- Extracted the duplicated "add to cart" dispatch + confirmation-toast logic (previously copy-pasted in `ProductCard` and `ProductDetail`) into a shared `useAddToCart` hook.
+- Fixed a bug where Profile's and Checkout's shipping/contact fields could stay permanently blank if the page mounted before `AuthContext` finished resolving (e.g. a hard refresh landing directly on `/profile`). Both pages now re-seed their fields once real user/profile data is available, without clobbering an edit already in progress.
+- Added unmount-safe cleanup to `Logout`'s sign-out effect, preventing a React state update after the component has already unmounted.
+- Replaced three instances of syncing state from context via `useEffect` + `setState` in `Checkout` (which tripped React's `set-state-in-effect` lint rule) with the render-time "adjust state when a prop changes" pattern, consistent with the checkbox logic in the same file that already used it correctly.
+- Added two regression tests: one guarding against the duplicate Firestore read in `Home`, one guarding against the blank-field bug in `Profile`.
 
 ### 2026-09-09: CI/CD + Reliability Update
 
@@ -66,6 +80,8 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 - Change password (with required re-authentication, per Firebase's security requirements)
 - Delete account with explicit confirmation, recent-login handling, and best-effort Firestore profile cleanup after successful Auth deletion
 - Phone number format validation (`xxx-xxx-xxxx`)
+- Friendly, user-facing error messages for every Firebase Auth failure (invalid credentials, weak password, email already in use, etc.), mapped from Firebase's error codes rather than surfacing raw SDK error text
+- Loading/disabled states on every auth-related submit action (login, register, profile saves) so the UI gives clear feedback instead of appearing to hang
 
 ### Product Catalog
 
@@ -80,12 +96,13 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 
 ### Cart & Checkout
 
-- Add to cart from the product grid or detail page
+- Add to cart from the product grid or detail page, via a single shared `useAddToCart` hook so both entry points stay in sync
 - Quantity controls and item removal
 - **Offline/session cart persistence** — cart contents are saved to `sessionStorage`, scoped per logged-in user (or a shared guest cart), so a page refresh doesn't lose what's in the cart
 - Guests can browse and build a cart freely; checkout itself requires login (redirects to `/login` with a toast explaining why)
 - Dedicated checkout page, separate from the cart review step, with an order summary and a shipping details form
 - Shipping address/phone can be pulled from the user's saved profile and optionally saved back to it after checkout — **dual-storage sync** between Firestore and the app's in-memory auth state, so a saved change is reflected immediately without requiring a page reload or re-login
+- Shipping fields re-seed correctly from the user's profile even if the page mounts before authentication has finished resolving, without ever overwriting text the user is actively typing
 - Order confirmation screen with the new order's ID
 
 ### Order Management
@@ -110,7 +127,7 @@ A full-stack e-commerce web app built with React, TypeScript, and Firebase (Auth
 - Sticky navbar with a scroll-to-top button that appears once scrolled
 - Fully responsive layout, tested down to narrow mobile widths
 - Custom SVG logo and brand identity ("The Daily Haul")
-- Route-level lazy loading with `React.lazy` + `Suspense` so non-home pages load on demand
+- Route-level lazy loading with `React.lazy` + `Suspense` — every route, including Home, loads on demand rather than being bundled into the initial JS chunk
 
 ---
 
@@ -236,15 +253,19 @@ Vercel's own automatic Git-based deployments are intentionally disabled for this
 ### Testing
 
 - **Unit tests**: `ProductCard` (rendering + "Add to Cart" click behavior) and `Cart` (empty state + quantity update behavior), each with `useCart` mocked for isolation.
-- **Integration test**: renders the real `CartProvider`, `ProductCard`, and `Cart` together (no mocks) to verify that adding a product from the catalog actually updates the cart state end-to-end.
-- **Auth edge-case tests**:
+- **Integration test**: `CartIntegration` — renders the real `CartProvider`, `ProductCard`, and `Cart` together (no mocks) to verify that adding a product from the catalog updates the cart state end-to-end, and that removing an item from the Cart removes it correctly.
+- **Route protection test**: `ProtectedRoute` — covers showing a loading state while auth resolves, redirecting to `/login` when logged out, redirecting to `/` on a role mismatch, and rendering the protected content when the role matches.
+- **Logout test**: verifies the sign-out flow and its unmount-safe cleanup.
+- **Auth edge-case tests** (`AuthPages`, `AuthContext`):
   - `Login` shows friendly Firebase error text on auth failure.
-  - `Login` disables submit and shows loading copy while auth request is pending.
-  - `Register` shows a specific recovery message if Auth succeeds but Firestore profile setup fails.
-  - `AuthProvider` resolves `authLoading` and emits a user-facing toast when profile fetch fails.
+  - `Login` disables submit and shows loading copy while the auth request is pending.
+  - `Register` shows a specific recovery message if Auth succeeds but the Firestore profile write fails.
+  - `AuthProvider` resolves `authLoading` and emits a user-facing toast when the Firestore profile fetch fails.
   - `AuthProvider` unsubscribes from `onAuthStateChanged` on unmount to protect against memory leaks.
+- **Home regression test**: guards against a duplicate Firestore read — `fetchProducts` is asserted to be called exactly once per mount, even though the page also renders a category filter derived from the fetched products.
+- **Profile regression test**: guards against a bug where the name/contact fields could stay blank if the page mounted before `AuthContext` resolved — verifies the fields populate once real user/profile data arrives, and that an in-progress edit isn't overwritten by a later re-render carrying the same data.
 
-Current suite status: 7 test suites, 16 tests.
+Current suite status: 9 test suites, 19 tests.
 
 Run the suite locally with:
 
@@ -265,7 +286,7 @@ src/
   pages/          # Route-level components (Home, Cart, Checkout, Profile, ManageProducts, etc.)
   styles/         # Shared inline style objects (auth forms) + theme.css design tokens
   types/          # Shared TypeScript types (Product, Order, CartItem, etc.)
-  utils/          # Shared helpers (validators, price calculations)
+  utils/          # Shared helpers (validators, price calculations, Firebase error mapping)
   __tests__/      # Jest unit and integration tests
   __mocks__/      # Manual mocks (e.g. firebaseConfig) used during tests
 ```
@@ -278,8 +299,8 @@ src/
 - **React Query + Context split**: product data fetching (network requests, caching, loading/error states) is handled entirely by React Query; the fetched results are then synced into a lightweight Context/reducer so other parts of the app can read the same product list without re-fetching.
 - **URL as state**: search, sort, and category filters on the storefront live in the URL's query string via `useSearchParams`, not local component state — this is what makes filtered views shareable and gives back/forward browser navigation the behavior users expect.
 - **Denormalized order data**: each order stores a full snapshot of its items (title, price, image, quantity) rather than references to live product documents, so a customer's order history always reflects what they actually paid — even if a product's price or details change later.
-- **Auth/profile race protection**: `AuthContext` guards async profile reads so stale auth callbacks cannot overwrite newer state.
-- **Profile/checkout form synchronization**: profile-derived form defaults update safely when async user/profile data arrives, while preserving user edits.
+- **Auth/profile race protection**: `AuthContext` tags each `onAuthStateChanged` event with an incrementing id and ignores any async profile-fetch completion whose id doesn't match the latest event, so a slow, stale callback can never overwrite state from a newer one.
+- **Profile/checkout form synchronization**: both pages re-seed their form fields from live `user`/`profile` data whenever that data changes (handled at render time rather than via `useEffect`, to stay consistent with React's guidance on deriving state from props and to avoid tripping the `set-state-in-effect` lint rule) — but only while the corresponding field isn't currently being edited, so an in-progress edit is never silently overwritten.
 
 ---
 
