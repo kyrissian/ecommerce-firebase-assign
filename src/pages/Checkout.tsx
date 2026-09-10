@@ -46,23 +46,36 @@ const Checkout: React.FC = () => {
     }
   }, [authLoading, user, navigate]);
 
-  useEffect(() => {
-    if (!didEditRecipientName) {
-      setRecipientName(user?.displayName ?? "");
-    }
-  }, [didEditRecipientName, user?.displayName]);
+  // The three fields below re-seed from live user/profile data whenever
+  // that data changes -- e.g. once AuthContext finishes resolving after
+  // Checkout mounts, or if the person edits their profile in another
+  // tab. This happens here, during render, rather than via a
+  // useEffect + setState pair (React's own guidance for "adjust state
+  // when a prop changes": comparing against the previous value and
+  // calling the setter conditionally in the render body, rather than
+  // in an effect, avoids an extra unnecessary render pass and keeps
+  // this consistent with saveContactToProfile below, which already
+  // uses this same pattern). Each field only re-seeds while the person
+  // hasn't started typing into it themselves.
+  const [lastSyncedDisplayName, setLastSyncedDisplayName] = useState(
+    user?.displayName,
+  );
+  if (user?.displayName !== lastSyncedDisplayName) {
+    setLastSyncedDisplayName(user?.displayName);
+    if (!didEditRecipientName) setRecipientName(user?.displayName ?? "");
+  }
 
-  useEffect(() => {
-    if (!didEditAddress) {
-      setShippingAddress(profile?.address ?? "");
-    }
-  }, [didEditAddress, profile?.address]);
+  const [lastSyncedAddress, setLastSyncedAddress] = useState(profile?.address);
+  if (profile?.address !== lastSyncedAddress) {
+    setLastSyncedAddress(profile?.address);
+    if (!didEditAddress) setShippingAddress(profile?.address ?? "");
+  }
 
-  useEffect(() => {
-    if (!didEditPhone) {
-      setPhone(profile?.phone ?? "");
-    }
-  }, [didEditPhone, profile?.phone]);
+  const [lastSyncedPhone, setLastSyncedPhone] = useState(profile?.phone);
+  if (profile?.phone !== lastSyncedPhone) {
+    setLastSyncedPhone(profile?.phone);
+    if (!didEditPhone) setPhone(profile?.phone ?? "");
+  }
 
   const hasNoSavedContact = !profile?.address && !profile?.phone;
   const addressChanged = shippingAddress !== (profile?.address ?? "");
